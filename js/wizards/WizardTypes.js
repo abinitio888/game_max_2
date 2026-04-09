@@ -24,6 +24,18 @@ const WIZARD_TYPES = {
       w.rushDash = true;
       game.particles.push(...burst(w.x, w.y, '#ff4500', 15));
     },
+    useUltimate(w, game) {
+      // Meteorregn: 8 eldkulor runt muspekaren
+      const mx = game.aimX || w.x, my = game.aimY || w.y;
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const tx = mx + (Math.random() - 0.5) * 400;
+          const ty = my + (Math.random() - 0.5) * 400;
+          game.entities.push(new AoeEffect(tx, ty, 50, w.atk * 3, w.team, '#ff4500', 0.5));
+          game.particles.push(...burst(tx, ty, '#ff6600', 12));
+        }, i * 150);
+      }
+    },
   },
 
   ice: {
@@ -39,6 +51,16 @@ const WIZARD_TYPES = {
     },
     rushEffect(w, game) {
       game.particles.push(...burst(w.x, w.y, '#7ecef4', 15));
+    },
+    useUltimate(w, game) {
+      // Djupfrysning: alla fiender fryses i 2s
+      game.entities.forEach(e => {
+        if (e.alive && e.team !== w.team && e.hp !== undefined && e.effects) {
+          e.effects.push({ type: 'root', duration: 2.0, magnitude: 0 });
+          game.particles.push(...burst(e.x, e.y, '#aaddff', 6));
+        }
+      });
+      game.particles.push(...burst(w.x, w.y, '#7ecef4', 20));
     },
   },
 
@@ -59,9 +81,32 @@ const WIZARD_TYPES = {
       }
     },
     rushEffect(w, game) {
-      // Thunder teleport - handled in Wizard.startRush by teleporting instantly
       w.teleportToNexus = true;
       game.particles.push(...burst(w.x, w.y, '#ffe066', 20));
+    },
+    useUltimate(w, game) {
+      // Kedjeblixten: studsar mellan upp till 6 fiender
+      const enemies = game.entities.filter(e => e.alive && e.team !== w.team && e.hp !== undefined);
+      const hit = new Set();
+      let current = w;
+      for (let i = 0; i < 6; i++) {
+        let nearest = null, minD = 360;
+        for (const e of enemies) {
+          if (hit.has(e)) continue;
+          const d = dist(current, e);
+          if (d < minD) { minD = d; nearest = e; }
+        }
+        if (!nearest) break;
+        hit.add(nearest);
+        const delay = i * 100;
+        (function(target, d) {
+          setTimeout(() => {
+            game.entities.push(new LightningStrike(target.x, target.y, w.atk * 2.5, w.team, 0));
+            if (target.alive) target.takeDamage(w.atk * 2.5, game);
+          }, d);
+        })(nearest, delay);
+        current = nearest;
+      }
     },
   },
 
@@ -82,6 +127,22 @@ const WIZARD_TYPES = {
       setTimeout(() => { if (w) w.isInvisible = false; }, 2000);
       game.particles.push(...burst(w.x, w.y, '#8a4fff', 12));
     },
+    useUltimate(w, game) {
+      // Dödsmarkering: närmaste fiende exploderar efter 3s
+      const enemies = game.entities.filter(e => e.alive && e.team !== w.team && e.hp !== undefined && dist(w, e) < w.range);
+      if (enemies.length === 0) return;
+      enemies.sort((a, b) => dist(w, a) - dist(w, b));
+      const target = enemies[0];
+      target.deathMark = true;
+      game.particles.push(...burst(target.x, target.y, '#8a4fff', 10));
+      setTimeout(() => {
+        if (target.alive) {
+          target.takeDamage(w.atk * 8, game);
+          game.particles.push(...burst(target.x, target.y, '#8a4fff', 25));
+          game.entities.push(new AoeEffect(target.x, target.y, 60, 0, w.team, '#8a4fff', 0.3));
+        }
+      }, 3000);
+    },
   },
 
   nature: {
@@ -101,6 +162,11 @@ const WIZARD_TYPES = {
     rushEffect(w, game) {
       game.particles.push(...burst(w.x, w.y, '#4caf50', 12));
     },
+    useUltimate(w, game) {
+      // Helingslund: healzon i 4s
+      game.entities.push(new HealZone(w.x, w.y, w, 4));
+      game.particles.push(...burst(w.x, w.y, '#4caf50', 20));
+    },
   },
 
   void: {
@@ -115,9 +181,15 @@ const WIZARD_TYPES = {
       game.particles.push(...burst(w.x, w.y, '#9c27b0', 18));
     },
     rushEffect(w, game) {
-      // Void Rift portal remains 1s
       game.entities.push(new VoidPortal(w.x, w.y, game.playerNexus || game.enemyNexus, 1));
       game.particles.push(...burst(w.x, w.y, '#9c27b0', 15));
+    },
+    useUltimate(w, game) {
+      // Singularitet: massivt svart hål med starkare sugkraft
+      const bh = new BlackHole(w.x, w.y, w.atk * 3, w.team, 3);
+      bh._superPull = true;
+      game.entities.push(bh);
+      game.particles.push(...burst(w.x, w.y, '#9c27b0', 25));
     },
   },
 };
@@ -306,8 +378,9 @@ class BlackHole {
         if (d < 150) {
           // Pull
           const n = normalize(this.x - e.x, this.y - e.y);
-          e.x += n.x * 60 * dt;
-          e.y += n.y * 60 * dt;
+          const pullStrength = this._superPull ? 300 : 60;
+          e.x += n.x * pullStrength * dt;
+          e.y += n.y * pullStrength * dt;
           if (d < this.radius) {
             e.takeDamage(this.dps * dt * (d < 20 ? 3 : 1), game);
           }
@@ -347,6 +420,46 @@ class VoidPortal {
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(this.x, this.y, 20, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+}
+
+class HealZone {
+  constructor(x, y, owner, duration) {
+    this.x = x; this.y = y;
+    this.owner = owner;
+    this.duration = duration;
+    this.maxDuration = duration;
+    this.radius = 80;
+    this.alive = true;
+    this.type = 'heal_zone';
+    this.healTimer = 0;
+  }
+  update(dt) {
+    this.duration -= dt;
+    if (this.duration <= 0) { this.alive = false; return; }
+    // Heal owner every 0.5s while inside
+    this.healTimer -= dt;
+    if (this.healTimer <= 0) {
+      this.healTimer = 0.5;
+      if (this.owner && this.owner.alive && dist(this, this.owner) < this.radius) {
+        this.owner.hp = Math.min(this.owner.maxHp, this.owner.hp + this.owner.maxHp * 0.05);
+      }
+    }
+  }
+  draw(ctx) {
+    const alpha = (this.duration / this.maxDuration) * 0.3;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#4caf50';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = alpha * 2;
+    ctx.strokeStyle = '#00ff44';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 1;
   }

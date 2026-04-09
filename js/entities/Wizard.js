@@ -27,6 +27,8 @@ class Wizard extends Entity {
     this.abilityCooldown = WIZARD_TYPES[data.type].abilityCooldown;
     this.rushTimer = 0;
     this.rushCooldown = C.RUSH_COOLDOWN;
+    this.ultimateTimer    = 0;
+    this.ultimateCooldown = 45;
 
     this.isRushing = false;
     this.rushTarget = null;
@@ -78,9 +80,10 @@ class Wizard extends Entity {
   update(dt, input, game) {
     if (!this.alive) return;
 
-    this.atkTimer     = Math.max(0, this.atkTimer - dt);
-    this.abilityTimer = Math.max(0, this.abilityTimer - dt);
-    this.rushTimer    = Math.max(0, this.rushTimer - dt);
+    this.atkTimer      = Math.max(0, this.atkTimer - dt);
+    this.abilityTimer  = Math.max(0, this.abilityTimer - dt);
+    this.rushTimer     = Math.max(0, this.rushTimer - dt);
+    this.ultimateTimer = Math.max(0, this.ultimateTimer - dt);
 
     // Teleport on rush for thunder
     if (this.teleportToNexus) {
@@ -147,6 +150,14 @@ class Wizard extends Entity {
 
       if (input.justPressed['e'] && this.rushTimer <= 0) {
         this._startRush(game);
+      }
+
+      if (input.justPressed['r'] && this.ultimateTimer <= 0) {
+        if (WIZARD_TYPES[this.wizardType].useUltimate) {
+          WIZARD_TYPES[this.wizardType].useUltimate(this, game);
+          this.ultimateTimer = this.ultimateCooldown;
+          game.announcements.push({ text: `[R] ${WIZARD_TYPES[this.wizardType].name} ultimate!`, duration: 2, maxDuration: 2 });
+        }
       }
 
       input.mouseClick = false;

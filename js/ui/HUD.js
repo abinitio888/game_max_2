@@ -14,14 +14,14 @@ class HUD {
     const pw = game.playerWizard;
     if (!pw || !pw.alive) return;
 
-    const px = 10, py = C.H - 90;
+    const px = 10, py = C.H - 104;
 
     // Panel bg
     ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.fillRect(px, py, 220, 80);
+    ctx.fillRect(px, py, 220, 94);
     ctx.strokeStyle = pw.color;
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(px, py, 220, 80);
+    ctx.strokeRect(px, py, 220, 94);
 
     // Type + stars
     ctx.fillStyle = pw.color;
@@ -63,14 +63,34 @@ class HUD {
     ctx.font = '14px Arial';
     ctx.fillText(items.join(' '), px + 140, py + 62);
 
-    // Ability cooldowns
-    const abilityReady = pw.abilityTimer <= 0;
-    const rushReady    = pw.rushTimer <= 0;
-    ctx.fillStyle = abilityReady ? '#aaffaa' : '#777';
-    ctx.font = '9px Arial';
-    ctx.fillText(`[Q] ${abilityReady ? 'Redo' : pw.abilityTimer.toFixed(1) + 's'}`, px + 8, py + 72);
-    ctx.fillStyle = rushReady ? '#aaffaa' : '#777';
-    ctx.fillText(`[E] Rush ${rushReady ? 'Redo' : pw.rushTimer.toFixed(1) + 's'}`, px + 70, py + 72);
+    // Ability cooldowns — Q, E, R
+    const spells = [
+      { key: 'Q', label: 'Förmåga', ready: pw.abilityTimer <= 0, timer: pw.abilityTimer, color: '#aaffaa' },
+      { key: 'E', label: 'Rush',    ready: pw.rushTimer <= 0,    timer: pw.rushTimer,    color: '#aaffaa' },
+      { key: 'R', label: 'Ultim',   ready: pw.ultimateTimer <= 0, timer: pw.ultimateTimer, color: '#ff6666' },
+    ];
+    spells.forEach((sp, i) => {
+      const bx = px + 8 + i * 70;
+      const by = py + 72;
+      // Icon box
+      ctx.fillStyle = sp.ready ? sp.color : '#333';
+      ctx.fillRect(bx, by, 62, 18);
+      ctx.strokeStyle = sp.ready ? sp.color : '#555';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx, by, 62, 18);
+      // Cooldown fill overlay
+      if (!sp.ready) {
+        const pct = clamp(sp.timer / (sp.key === 'Q' ? pw.abilityCooldown : sp.key === 'E' ? C.RUSH_COOLDOWN : pw.ultimateCooldown), 0, 1);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(bx, by, 62 * pct, 18);
+      }
+      ctx.fillStyle = sp.ready ? '#000' : '#aaa';
+      ctx.font = 'bold 8px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(`[${sp.key}]`, bx + 2, by + 8);
+      ctx.font = '8px Arial';
+      ctx.fillText(sp.ready ? sp.label : sp.timer.toFixed(1) + 's', bx + 2, by + 16);
+    });
   }
 
   _drawTimer(ctx, game) {
@@ -119,11 +139,11 @@ class HUD {
 
   _drawControls(ctx) {
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(C.W - 165, C.H - 90, 160, 86);
+    ctx.fillRect(C.W - 165, C.H - 104, 160, 100);
     ctx.fillStyle = '#888';
     ctx.font = '9px Arial';
     ctx.textAlign = 'left';
-    const lines = ['WASD – Rör dig', 'Mus – Sikta', 'Klick/Mellanslag – Attackera', 'Q – Speciell förmåga', 'E – Rusa till nexus'];
+    const lines = ['WASD – Rör dig', 'Mus – Sikta', 'Klick/Mellanslag – Attackera', 'Q – Speciell förmåga', 'E – Rusa till nexus', 'R – Ultimat'];
     lines.forEach((l, i) => ctx.fillText(l, C.W - 158, C.H - 74 + i * 13));
   }
 }
