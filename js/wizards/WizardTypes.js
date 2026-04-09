@@ -221,12 +221,20 @@ class AoeEffect {
   update(dt, game) {
     this.duration -= dt;
     if (this.duration <= 0) { this.alive = false; return; }
-    // Damage nearby enemies once
+    // Damage nearby enemies once (entities + towers)
     game.entities.forEach(e => {
       if (e.alive && e.team !== this.team && e.hp !== undefined && !this.hitSet.has(e)) {
         if (circlesOverlap(this.x, this.y, this.radius, e.x, e.y, e.radius || 14)) {
           e.takeDamage(this.damage, game);
           this.hitSet.add(e);
+        }
+      }
+    });
+    game.towers.forEach(t => {
+      if (!t.destroyed && t.team !== this.team && !this.hitSet.has(t)) {
+        if (circlesOverlap(this.x, this.y, this.radius, t.x, t.y, t.radius)) {
+          t.takeDamage(this.damage, game);
+          this.hitSet.add(t);
         }
       }
     });
@@ -298,6 +306,12 @@ class LightningStrike {
             circlesOverlap(this.x, this.y, 30, e.x, e.y, e.radius || 14)) {
           e.takeDamage(this.damage, game);
           if (e.effects) e.effects.push({ type: 'stun', duration: 0.2, magnitude: 0 });
+        }
+      });
+      game.towers.forEach(t => {
+        if (!t.destroyed && t.team !== this.team &&
+            circlesOverlap(this.x, this.y, 30, t.x, t.y, t.radius)) {
+          t.takeDamage(this.damage, game);
         }
       });
       game.particles.push(...burst(this.x, this.y, '#ffe066', 8));
