@@ -2,7 +2,7 @@
 //  GACHA SYSTEM  –  egg opening, roster persistence, gold
 // ============================================================
 const LS_KEY      = 'wizardRoster_v2';
-const LS_GOLD_KEY = 'wizardGold_v1';
+const LS_GOLD_KEY = 'wizardGold_v2';
 
 class GachaSystem {
   constructor() {
