@@ -58,6 +58,7 @@ class Skeleton extends Entity {
         if (!e.alive || e.team === this.team || e.hp === undefined) continue;
         const t = e.type;
         if (t !== 'wizard' && t !== 'boss') continue;
+        if (t === 'boss' && !e.aggroed) continue; // ignorera sovande bossar
         const d = dist(this, e);
         if (d < minD) { minD = d; target = e; }
       }
