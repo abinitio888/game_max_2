@@ -120,8 +120,8 @@ class Boss extends Entity {
         this.atkTimer = 1.0;
       }
       this.deaggroTimer = 0;
-    } else if (target && minD < 350) {
-      // Chase
+    } else if (target) {
+      // Chase anywhere on the map
       const n = normalize(target.x - this.x, target.y - this.y);
       this.x += n.x * this.speed * sm * dt;
       this.y += n.y * this.speed * sm * dt;
