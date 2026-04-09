@@ -23,7 +23,7 @@ const C = {
   SKEL_SPAWN_INTERVAL: 8,     // seconds between skeleton waves
 
   // ── Mega Skeleton ─────────────────────────────────────────
-  MEGA_TRIGGER_TIME: 120,     // seconds into game
+  MEGA_TRIGGER_TIME: 240,     // seconds into game (4 minutes)
   MEGA_HP:           5000,
   MEGA_SPEED:        65,
   MEGA_TOWER_DMG:    99999,
