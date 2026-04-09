@@ -21,6 +21,15 @@ class RosterUI {
       const col = i % cols, row = Math.floor(i / cols);
       const cx = startX + col * (cardW + gap);
       const cy = startY + row * (cardH + gap);
+
+      // × delete button (top-right corner of card)
+      const delX = cx + cardW - 10, delY = cy + 10;
+      if (Math.hypot(mx - delX, my - delY) < 10) {
+        game.gacha.removeFromRoster(available[i].id);
+        if (this.selectedIdx >= available.length - 1) this.selectedIdx = -1;
+        return;
+      }
+
       if (mx >= cx && mx <= cx + cardW && my >= cy && my <= cy + cardH) {
         this.selectedIdx = i;
         return;
@@ -105,6 +114,19 @@ class RosterUI {
       ctx.textAlign = 'center';
       ctx.fillText(tw.name, cx + cardW / 2, cy + 100);
       ctx.fillText(`Lv ${wd.level || 1}`, cx + cardW / 2, cy + 114);
+
+      // × delete button
+      const delX = cx + cardW - 10, delY = cy + 10;
+      ctx.fillStyle = '#cc2222';
+      ctx.beginPath();
+      ctx.arc(delX, delY, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('×', delX, delY);
+      ctx.textBaseline = 'alphabetic';
     }
 
     // Confirm button

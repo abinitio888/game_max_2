@@ -34,6 +34,20 @@ class StartScreen {
         this.gacha.roster = [];
       }
     }
+
+    // Delete individual wizard (× on each mini circle in roster)
+    const roster = this.gacha.getRoster();
+    const maxShow = 8;
+    const startX = Math.max(30, C.W / 2 - (Math.min(roster.length, maxShow) * 55) / 2);
+    for (let i = 0; i < Math.min(roster.length, maxShow); i++) {
+      const cx = startX + i * 55 + 25;
+      const cy = 590;
+      const btnX = cx + 12, btnY = cy - 22;
+      if (Math.hypot(mx - btnX, my - btnY) < 10) {
+        this.gacha.removeFromRoster(roster[roster.length - 1 - i].id);
+        return;
+      }
+    }
   }
 
   update(dt) {
@@ -173,6 +187,19 @@ class StartScreen {
       for (let s = 0; s < wd.stars; s++) {
         drawStar(ctx, cx - (wd.stars - 1) * 5 + s * 10, cy + 22, 4, '#FFD700');
       }
+
+      // Delete × button
+      const btnX = cx + 12, btnY = cy - 22;
+      ctx.fillStyle = '#cc2222';
+      ctx.beginPath();
+      ctx.arc(btnX, btnY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('×', btnX, btnY);
+      ctx.textBaseline = 'alphabetic';
     }
     if (roster.length > maxShow) {
       ctx.fillStyle = '#888';
