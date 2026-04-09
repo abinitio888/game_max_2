@@ -2,7 +2,19 @@
 //  GAME MAP  –  renders the static background
 // ============================================================
 class GameMap {
+  constructor() {
+    // Pre-render the static background once to an offscreen canvas
+    this._cache = document.createElement('canvas');
+    this._cache.width  = C.W;
+    this._cache.height = C.H;
+    this._buildCache(this._cache.getContext('2d'));
+  }
+
   draw(ctx) {
+    ctx.drawImage(this._cache, 0, 0);
+  }
+
+  _buildCache(ctx) {
     // Background
     ctx.fillStyle = C.BG_COLOR;
     ctx.fillRect(0, 0, C.W, C.H);

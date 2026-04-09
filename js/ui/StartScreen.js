@@ -3,19 +3,21 @@
 // ============================================================
 class StartScreen {
   constructor(gacha) {
-    this.gacha  = gacha;
-    this.scroll = 0; // roster scroll offset
+    this.gacha = gacha;
   }
 
   handleClick(mx, my, game) {
-    // Egg buttons
-    for (let i = 0; i < 3; i++) {
-      const ex = 220 + i * 170, ey = 310;
-      if (Math.hypot(mx - ex, my - ey) < 50) {
-        this.gacha.openEgg(i + 1);
-        return;
+    // Single egg button (center of screen)
+    const ex = C.W / 2, ey = 300;
+    if (Math.hypot(mx - ex, my - ey) < 55) {
+      if (this.gacha.gold < C.GOLD_EGG_COST) {
+        game.announcements.push({ text: 'Inte tillräckligt med guld! Spela för att tjäna mer.', duration: 2.5, maxDuration: 2.5 });
+      } else {
+        this.gacha.openEgg();
       }
+      return;
     }
+
     // Start button
     if (mx >= C.W / 2 - 80 && mx <= C.W / 2 + 80 && my >= 490 && my <= 530) {
       if (this.gacha.getRoster().length > 0) {
@@ -24,6 +26,7 @@ class StartScreen {
         game.announcements.push({ text: 'Öppna ett ägg först!', duration: 2, maxDuration: 2 });
       }
     }
+
     // Clear roster button
     if (mx >= C.W - 120 && mx <= C.W - 10 && my >= C.H - 34 && my <= C.H - 6) {
       if (confirm('Rensa hela samlingen?')) {
@@ -41,51 +44,61 @@ class StartScreen {
     // Background
     ctx.fillStyle = '#0d0d1a';
     ctx.fillRect(0, 0, C.W, C.H);
-
-    // Starfield
     this._drawStars(ctx);
 
     // Title
-    ctx.shadowBlur  = 30;
-    ctx.shadowColor = '#6644ff';
-    ctx.fillStyle   = '#fff';
+    ctx.fillStyle = '#fff';
     ctx.font = 'bold 52px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('⚗ TROLLKARNAS KRIG', C.W / 2, 80);
-    ctx.shadowBlur = 0;
     ctx.fillStyle = '#aaaacc';
     ctx.font = '16px Arial';
     ctx.fillText('Öppna ägg för att samla trollkarlar och strid mot AI', C.W / 2, 115);
 
-    // Egg section header
-    ctx.fillStyle = '#ccccdd';
+    // Gold display
+    const gold = this.gacha.gold;
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(C.W / 2 - 70, 130, 140, 32);
+    ctx.strokeStyle = '#e8b84b';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(C.W / 2 - 70, 130, 140, 32);
+    ctx.fillStyle = '#e8b84b';
     ctx.font = 'bold 18px Arial';
-    ctx.fillText('— Välj ett ägg att öppna —', C.W / 2, 200);
+    ctx.fillText(`💰 ${gold} guld`, C.W / 2, 152);
 
-    const eggLabels = ['Vanligt Ägg', 'Sällsynt Ägg', 'Episkt Ägg'];
-    const eggTiers  = [1, 2, 3];
-    const eggCost   = ['Gratis', 'Gratis', 'Gratis'];
+    // Egg section
+    ctx.fillStyle = '#ccccdd';
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText('— Öppna ett magiskt ägg —', C.W / 2, 198);
 
-    for (let i = 0; i < 3; i++) {
-      const ex = 220 + i * 170;
-      const ey = 280;
+    // Probability info
+    ctx.fillStyle = '#888';
+    ctx.font = '11px Arial';
+    ctx.fillText('1★ 50%   2★ 30%   3★ 20%', C.W / 2, 218);
 
-      // Draw egg (gacha system handles animation for lastResult tier)
-      if (this.gacha.eggPhase !== 'idle' && this.gacha.lastResult &&
-          this.gacha.lastResult.stars === i + 1) {
-        this.gacha.drawEggAnimation(ctx, ex, ey, i + 1);
-      } else {
-        this.gacha._drawEgg(ctx, ex, ey, i + 1, 0);
-      }
-
-      // Label
-      ctx.fillStyle = '#ccc';
-      ctx.font = '12px Arial';
-      ctx.fillText(eggLabels[i], ex, ey + 55);
-      ctx.fillStyle = '#aaa';
-      ctx.font = '10px Arial';
-      ctx.fillText(eggCost[i], ex, ey + 70);
+    // Single egg
+    const ex = C.W / 2, ey = 300;
+    if (this.gacha.eggPhase !== 'idle') {
+      this.gacha.drawEggAnimation(ctx, ex, ey);
+    } else {
+      this.gacha._drawEgg(ctx, ex, ey, 1, 0);
     }
+
+    // Cost label under egg
+    const canAfford = gold >= C.GOLD_EGG_COST;
+    ctx.fillStyle = canAfford ? '#e8b84b' : '#cc4444';
+    ctx.font = 'bold 13px Arial';
+    ctx.fillText(`Kostar ${C.GOLD_EGG_COST} 💰`, ex, ey + 60);
+    if (!canAfford) {
+      ctx.fillStyle = '#cc4444';
+      ctx.font = '11px Arial';
+      ctx.fillText('Inte råd — spela för att tjäna guld!', ex, ey + 76);
+    }
+
+    // How to earn gold
+    ctx.fillStyle = '#555';
+    ctx.font = '10px Arial';
+    ctx.fillText(`Skelett +${C.GOLD_SKEL}  Boss +${C.GOLD_BOSS}  Torn +${C.GOLD_TOWER}  Trollkarl +${C.GOLD_ENEMY_WIZ}`, ex, ey + 95);
 
     // Start button
     const canStart = this.gacha.getRoster().length > 0;
@@ -105,7 +118,7 @@ class StartScreen {
 
     // Announcements
     game.announcements = game.announcements.filter(a => {
-      a.duration -= 1/60;
+      a.duration -= 1 / 60;
       return a.duration > 0;
     });
     for (const ann of game.announcements) {
@@ -117,7 +130,8 @@ class StartScreen {
     ctx.fillRect(C.W - 120, C.H - 34, 110, 28);
     ctx.fillStyle = '#888';
     ctx.font = '10px Arial';
-    ctx.fillText('Rensa samling', C.W - 65, C.H - 17);
+    ctx.textAlign = 'left';
+    ctx.fillText('Rensa samling', C.W - 116, C.H - 17);
   }
 
   _drawRoster(ctx, game) {
@@ -131,23 +145,30 @@ class StartScreen {
     }
     ctx.fillStyle = '#aaa';
     ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
     ctx.fillText(`Din samling: ${roster.length} trollkarlar`, C.W / 2, 560);
 
-    const startX = Math.max(30, C.W / 2 - (Math.min(roster.length, 8) * 55) / 2);
     const maxShow = 8;
+    const startX = Math.max(30, C.W / 2 - (Math.min(roster.length, maxShow) * 55) / 2);
     for (let i = 0; i < Math.min(roster.length, maxShow); i++) {
-      const wd = roster[roster.length - 1 - i]; // newest first
+      const wd = roster[roster.length - 1 - i];
       const cx = startX + i * 55 + 25;
       const cy = 590;
       const tw = WIZARD_TYPES[wd.type];
 
-      ctx.shadowBlur  = 8;
-      ctx.shadowColor = tw.glowColor;
-      ctx.fillStyle   = tw.color;
+      // Cheap glow ring
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = tw.glowColor;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = tw.color;
       ctx.beginPath();
       ctx.arc(cx, cy, 18, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
 
       for (let s = 0; s < wd.stars; s++) {
         drawStar(ctx, cx - (wd.stars - 1) * 5 + s * 10, cy + 22, 4, '#FFD700');
@@ -156,13 +177,13 @@ class StartScreen {
     if (roster.length > maxShow) {
       ctx.fillStyle = '#888';
       ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
       ctx.fillText(`+${roster.length - maxShow} fler`, startX + maxShow * 55 + 30, 595);
     }
   }
 
   _drawStars(ctx) {
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    // Static starfield (deterministic positions)
     for (let i = 0; i < 80; i++) {
       const x = ((i * 127 + 43) % C.W);
       const y = ((i * 91  + 17) % 480);

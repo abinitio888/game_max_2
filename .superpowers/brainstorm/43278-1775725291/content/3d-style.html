@@ -1,0 +1,219 @@
+<h2>Vilken typ av "3D" vill du ha?</h2>
+<p class="subtitle">Alla tre alternativ fungerar med vanilla JS — ingen byggprocess krävs</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="isometric" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <canvas id="c1" width="300" height="180" style="border-radius:6px"></canvas>
+    </div>
+    <div class="card-body">
+      <h3>A — Isometrisk (2.5D)</h3>
+      <p>Klassisk snedvinkel som Diablo / Age of Empires. Banorna ritas som rombformade brickor med djup. Ingen extra lib krävs — bara canvas-matematik.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Fördelar</h4><ul><li>Funkar i befintlig canvas</li><li>Tydlig djupkänsla</li><li>Stilren och tidlös look</li></ul></div>
+        <div class="cons"><h4>Nackdelar</h4><ul><li>Stor refaktorering av rörelse &amp; kollision</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="topdown-tilt" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <canvas id="c2" width="300" height="180" style="border-radius:6px"></canvas>
+    </div>
+    <div class="card-body">
+      <h3>B — Perspektivtilt (pseudo-3D)</h3>
+      <p>Uppifrån-ner med lätt perspektiv-transform — banan lutar lätt mot spelaren. Används i t.ex. Clash Royale. Enkel CSS transform + canvas.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Fördelar</h4><ul><li>Minimal kodomskrivning</li><li>Bevarar nuvarande gameplaylogik</li><li>Snabbt att implementera</li></ul></div>
+        <div class="cons"><h4>Nackdelar</h4><ul><li>Inte "äkta" 3D</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="webgl" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <canvas id="c3" width="300" height="180" style="border-radius:6px"></canvas>
+    </div>
+    <div class="card-body">
+      <h3>C — Äkta 3D (Three.js)</h3>
+      <p>Lägg till Three.js via CDN-script. Riktiga 3D-modeller, kamera, belysning. Wizards som cylindrar/koner, banor som 3D-plan med djup.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Fördelar</h4><ul><li>Verklig 3D-kamera &amp; perspektiv</li><li>Partikeleffekter i 3D-rum</li></ul></div>
+        <div class="cons"><h4>Nackdelar</h4><ul><li>Stor omskrivning av all rendering</li><li>Lär ta 2–3x längre</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Draw isometric demo
+(function() {
+  const c = document.getElementById('c1');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#12121f';
+  ctx.fillRect(0, 0, 300, 180);
+
+  function isoTile(ctx, col, row, w, h, color, highlight) {
+    const ox = 150, oy = 30;
+    const x = ox + (col - row) * w/2;
+    const y = oy + (col + row) * h/2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w/2, y + h/2);
+    ctx.lineTo(x, y + h);
+    ctx.lineTo(x - w/2, y + h/2);
+    ctx.closePath();
+    ctx.fillStyle = highlight || color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  const cols = [['#2a2a3a','#2a2a3a','#1a1a2e','#2a2a3a','#2a2a3a'],
+                ['#2a2a3a','#2a2a3a','#1a1a2e','#2a2a3a','#2a2a3a'],
+                ['#2a2a3a','#2a2a3a','#1a1a2e','#2a2a3a','#2a2a3a'],
+                ['#2a2a3a','#2a2a3a','#1a1a2e','#2a2a3a','#2a2a3a']];
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 5; col++) {
+      isoTile(ctx, col, row, 50, 26, cols[row][col]);
+    }
+  }
+  // Draw wizard-like shape
+  ctx.fillStyle = '#ff6b35';
+  ctx.beginPath();
+  ctx.arc(135, 80, 8, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#7ecef4';
+  ctx.beginPath();
+  ctx.arc(165, 95, 8, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '10px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Isometrisk vy', 150, 170);
+})();
+
+// Draw perspective tilt demo
+(function() {
+  const c = document.getElementById('c2');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#12121f';
+  ctx.fillRect(0, 0, 300, 180);
+
+  ctx.save();
+  // Perspective transform: skew the canvas slightly
+  ctx.transform(1, -0.15, 0, 0.85, 0, 25);
+
+  // Background
+  ctx.fillStyle = '#12121f';
+  ctx.fillRect(0, 0, 300, 200);
+
+  // Lanes
+  const laneColors = ['#2a2a3a', '#1a1a2e', '#2a2a3a', '#1a1a2e', '#2a2a3a'];
+  const lx = [10, 70, 130, 190, 250];
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = laneColors[i];
+    ctx.fillRect(lx[i], 0, 50, 200);
+  }
+  // Wizards
+  ctx.fillStyle = '#ff6b35';
+  ctx.beginPath(); ctx.arc(95, 150, 10, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#7ecef4';
+  ctx.beginPath(); ctx.arc(215, 40, 10, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '10px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Perspektivtilt', 150, 173);
+})();
+
+// Draw WebGL/Three.js style demo
+(function() {
+  const c = document.getElementById('c3');
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#0a0a15';
+  ctx.fillRect(0, 0, 300, 180);
+
+  // Draw a simple 3D-looking scene with perspective
+  // Ground plane
+  ctx.fillStyle = '#1a1a30';
+  ctx.beginPath();
+  ctx.moveTo(0, 120);
+  ctx.lineTo(300, 120);
+  ctx.lineTo(240, 60);
+  ctx.lineTo(60, 60);
+  ctx.closePath();
+  ctx.fill();
+
+  // Grid lines on ground
+  ctx.strokeStyle = '#2a2a50';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 6; i++) {
+    const px = 60 + i*(180/6), py = 60;
+    const qx = i*(300/6), qy = 120;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(qx,qy); ctx.stroke();
+  }
+  for (let i = 1; i < 4; i++) {
+    const t = i/4;
+    ctx.beginPath();
+    ctx.moveTo(60 + t*180, 60 + t*60);
+    ctx.lineTo(60 + t*180 + 180*(1-t), 60 + t*60);
+    ctx.stroke();
+  }
+
+  // Wizard cylinders
+  function wizard3d(ctx, x, y, color) {
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath(); ctx.ellipse(x, y+2, 10, 5, 0, 0, Math.PI*2); ctx.fill();
+    // Body
+    ctx.fillStyle = color;
+    ctx.fillRect(x-7, y-22, 14, 20);
+    // Top cap
+    ctx.beginPath(); ctx.ellipse(x, y-22, 7, 4, 0, 0, Math.PI*2); ctx.fill();
+    // Hat
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.moveTo(x-8, y-22);
+    ctx.lineTo(x+8, y-22);
+    ctx.lineTo(x, y-38);
+    ctx.closePath(); ctx.fill();
+    // Glow ring
+    ctx.globalAlpha = 0.4;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(x, y-2, 10, 5, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  wizard3d(ctx, 100, 108, '#ff6b35');
+  wizard3d(ctx, 190, 90, '#7ecef4');
+
+  // Towers as 3D blocks
+  ctx.fillStyle = '#2266ff';
+  ctx.fillRect(40, 75, 16, 30);
+  ctx.fillStyle = '#3377ff';
+  ctx.beginPath();
+  ctx.moveTo(40,75); ctx.lineTo(56,75); ctx.lineTo(60,68); ctx.lineTo(44,68); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#1a50cc';
+  ctx.beginPath();
+  ctx.moveTo(56,75); ctx.lineTo(60,68); ctx.lineTo(60,98); ctx.lineTo(56,105); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = '#cc2222';
+  ctx.fillRect(230, 63, 16, 25);
+  ctx.fillStyle = '#dd3333';
+  ctx.beginPath();
+  ctx.moveTo(230,63); ctx.lineTo(246,63); ctx.lineTo(250,56); ctx.lineTo(234,56); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '10px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Äkta 3D med Three.js', 150, 173);
+})();
+</script>

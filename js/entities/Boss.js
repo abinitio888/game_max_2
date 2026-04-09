@@ -33,6 +33,7 @@ class Boss extends Entity {
     // Give XP
     if (game.playerWizard && game.playerWizard.alive) {
       game.playerWizard.gainXP(C.XP_BOSS);
+      game.earnGold(C.GOLD_BOSS);
     }
     // Drop item
     game.entities.push(new ItemPickup(this.x, this.y, this.dropType));
@@ -91,8 +92,14 @@ class Boss extends Entity {
 
   draw(ctx) {
     if (!this.alive) return;
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = this.color;
+    // Cheap glow ring instead of shadowBlur
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius + 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // Body
     ctx.fillStyle = this.color;
@@ -129,8 +136,6 @@ class Boss extends Entity {
       ctx.stroke();
     }
 
-    ctx.shadowBlur = 0;
-
     // HP bar
     drawHpBar(ctx, this.x, this.y + this.radius + 4, 50, this.hp, this.maxHp, this.color);
 
@@ -158,9 +163,15 @@ class ItemPickup {
   }
   draw(ctx) {
     const yOff = Math.sin(this.bobTimer * 2) * 4;
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = this.itemType === 'speed' ? '#00ff88' : this.itemType === 'health' ? '#ff4444' : '#ffdd00';
-    ctx.fillStyle = ctx.shadowColor;
+    const glowColor = this.itemType === 'speed' ? '#00ff88' : this.itemType === 'health' ? '#ff4444' : '#ffdd00';
+    // Cheap glow halo
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = glowColor;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y + yOff, this.radius + 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = glowColor;
     ctx.beginPath();
     ctx.arc(this.x, this.y + yOff, this.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -169,7 +180,6 @@ class ItemPickup {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.itemType === 'speed' ? '⚡' : this.itemType === 'health' ? '❤' : '⚔', this.x, this.y + yOff);
-    ctx.shadowBlur = 0;
     ctx.textBaseline = 'alphabetic';
   }
 }

@@ -31,12 +31,15 @@ class Skeleton extends Entity {
 
     this.atkTimer = 0;
     this.targetY = team === 'player' ? C.ENEMY_BASE_Y : C.PLAYER_BASE_Y;
+    this._cachedTarget = null;
+    this._targetCacheTimer = 0;
   }
 
   onDeath(game) {
     if (game && game.particles) game.particles.push(...burst(this.x, this.y, this.color, 5));
     if (game && game.playerWizard && this.team !== game.playerWizard.team && game.playerWizard.alive) {
       game.playerWizard.gainXP(C.XP_SKELETON);
+      game.earnGold(C.GOLD_SKEL);
     }
   }
 
@@ -46,20 +49,28 @@ class Skeleton extends Entity {
 
     this.atkTimer = Math.max(0, this.atkTimer - dt);
 
-    // Find nearest target
-    const enemies = game.entities.filter(e =>
-      e.alive && e.team !== this.team && e.hp !== undefined &&
-      (e.type === 'wizard' || e.type === 'tower' || e.type === 'boss')
-    );
-    const towers = game.towers.filter(t => !t.destroyed && t.team !== this.team);
-    const allTargets = [...enemies, ...towers];
-
-    let target = null;
-    let minD = Infinity;
-    for (const t of allTargets) {
-      const d = dist(this, t);
-      if (d < minD) { minD = d; target = t; }
+    // Refresh target cache every 0.5s instead of searching every frame
+    this._targetCacheTimer -= dt;
+    if (this._targetCacheTimer <= 0 || (this._cachedTarget && !this._cachedTarget.alive)) {
+      this._targetCacheTimer = 0.5;
+      let target = null, minD = Infinity;
+      for (const e of game.entities) {
+        if (!e.alive || e.team === this.team || e.hp === undefined) continue;
+        const t = e.type;
+        if (t !== 'wizard' && t !== 'boss') continue;
+        const d = dist(this, e);
+        if (d < minD) { minD = d; target = e; }
+      }
+      for (const t of game.towers) {
+        if (t.destroyed || t.team === this.team) continue;
+        const d = dist(this, t);
+        if (d < minD) { minD = d; target = t; }
+      }
+      this._cachedTarget = target;
     }
+
+    const target = this._cachedTarget;
+    const minD = target ? dist(this, target) : Infinity;
 
     if (target && minD < this.atkRange) {
       if (this.atkTimer <= 0) {
@@ -79,9 +90,6 @@ class Skeleton extends Entity {
   }
 
   draw(ctx) {
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = this.color;
-
     // Body
     ctx.fillStyle = this.color;
     ctx.beginPath();
@@ -92,8 +100,6 @@ class Skeleton extends Entity {
     ctx.fillStyle = '#111';
     ctx.fillRect(this.x - 3, this.y - 2, 2, 2);
     ctx.fillRect(this.x + 1, this.y - 2, 2, 2);
-
-    ctx.shadowBlur = 0;
 
     if (this.quality !== 'normal') {
       drawHpBar(ctx, this.x, this.y - this.radius - 6, 20, this.hp, this.maxHp);

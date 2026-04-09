@@ -179,6 +179,7 @@ const game = {
     // Give XP for destroying towers
     if (this.playerWizard && this.playerWizard.alive && this.playerWizard.team !== tower.team) {
       this.playerWizard.gainXP(C.XP_TOWER);
+      this.earnGold(C.GOLD_TOWER);
     }
 
     // Check if this was triggered by mega skeleton cascade
@@ -200,6 +201,10 @@ const game = {
         }
       }
     }
+  },
+
+  earnGold(amount) {
+    if (this.gacha) this.gacha.earnGold(amount);
   },
 
   endGame(winner) {

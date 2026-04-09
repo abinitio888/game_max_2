@@ -70,6 +70,14 @@ const C = {
     void:    { hp: 85,  atk: 20, spd: 145, range: 210, atkRate: 1.0, projSpd: 320 },
   },
 
+  // ── Guld ─────────────────────────────────────────────────
+  GOLD_EGG_COST:    100,
+  GOLD_SKEL:        5,
+  GOLD_BOSS:        50,
+  GOLD_TOWER:       30,
+  GOLD_ENEMY_WIZ:   25,
+  EGG_STAR_RATES:   [0.50, 0.80, 1.00], // kumulativa: <0.50=1★, <0.80=2★, else 3★
+
   // ── Rush ─────────────────────────────────────────────────
   RUSH_COOLDOWN: 30,
 

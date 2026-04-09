@@ -72,9 +72,15 @@ js/
 ## Rörelse & mjuka lanes
 
 ### Borttaget
-- `WALL_RECTS` i `constants.js` används ej längre för kollision
+- `WALL_RECTS` (de inre lane-väggarna) används ej längre för kollision
 - `resolveWallCollision()` anropas ej
-- Spelaren kan röra sig fritt med WASD över hela banan
+- Spelaren kan röra sig fritt mellan lanes
+
+### Nytt: ytterkantsbegränsning
+- Vänster och höger ytterkant är **hårda väggar** — spelaren studsar tillbaka
+- Gräns: `x` clampas till `[40, C.W - 40]` (80px smalare total bredd)
+- Visuellt: 3D-stenmurar längs vänster och höger sida av banan (BoxGeometry, höga)
+- `clamp(this.x, 40, C.W - 40)` ersätter `clamp(this.x, 5, C.W - 5)` i Wizard.update()
 
 ### Behållet (oförändrat)
 - Skeletons rör sig mot `targetY`, håller sig i sin lane via `clamp` mot `LANE_LEFT`/`LANE_RIGHT` — men dessa är nu mjuka riktlinjer, inte hårda väggar
@@ -84,7 +90,7 @@ js/
 ### Visuell markering av lanes
 - Lane-plattor är lätt upphöjda (y = 0) jämfört med mellangångar (y = -0.15)
 - Mellangångarna är mörkare och smalare — signalerar "du kan gå här men det är inte lane"
-- Inga osynliga väggar
+- Inga inre osynliga väggar — bara ytterkantsmurarna
 
 ---
 

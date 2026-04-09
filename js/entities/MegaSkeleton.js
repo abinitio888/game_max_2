@@ -67,9 +67,14 @@ class MegaSkeleton extends Entity {
   }
 
   draw(ctx) {
-    // Ominous glow
-    ctx.shadowBlur = 25;
-    ctx.shadowColor = '#880000';
+    // Ominous glow ring
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = '#880000';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius + 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
     // Body
     ctx.fillStyle = '#444';
@@ -77,9 +82,8 @@ class MegaSkeleton extends Entity {
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // Glowing red eyes
+    // Red eyes
     ctx.fillStyle = '#ff0000';
-    ctx.shadowColor = '#ff0000';
     ctx.beginPath();
     ctx.arc(this.x - 9, this.y - 5, 5, 0, Math.PI * 2);
     ctx.arc(this.x + 9, this.y - 5, 5, 0, Math.PI * 2);
@@ -95,8 +99,6 @@ class MegaSkeleton extends Entity {
       ctx.lineTo(this.x + Math.cos(a) * (this.radius - 3), this.y + Math.sin(a) * (this.radius - 3));
       ctx.stroke();
     }
-
-    ctx.shadowBlur = 0;
 
     // HP bar (large)
     drawHpBar(ctx, this.x, this.y + this.radius + 6, 80, this.hp, this.maxHp, '#cc2200');

@@ -195,6 +195,7 @@ class Wizard extends Entity {
       // Enemy wizard died — respawn them later
       if (game.playerWizard && game.playerWizard.alive) {
         game.playerWizard.gainXP(C.XP_ENEMY_WIZARD);
+        game.earnGold(C.GOLD_ENEMY_WIZ);
       }
       game.enemyRespawnTimer = 4; // respawn after 4 seconds
     }
@@ -205,8 +206,14 @@ class Wizard extends Entity {
     const alpha = this.isInvisible ? 0.35 : 1;
     ctx.globalAlpha = alpha;
 
-    ctx.shadowBlur  = 14;
-    ctx.shadowColor = this.glowColor;
+    // Cheap glow ring instead of shadowBlur
+    ctx.globalAlpha = alpha * 0.35;
+    ctx.strokeStyle = this.glowColor;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = alpha;
 
     // Body
     ctx.fillStyle = this.color;
@@ -230,8 +237,6 @@ class Wizard extends Entity {
     ctx.lineTo(hx + Math.cos(this.facingAngle) * 16, hy + Math.sin(this.facingAngle) * 16);
     ctx.closePath();
     ctx.fill();
-
-    ctx.shadowBlur = 0;
 
     // Stars above head
     for (let i = 0; i < this.stars; i++) {

@@ -38,12 +38,16 @@ class Projectile extends Entity {
 
   draw(ctx) {
     const color = PROJ_COLORS[this.projType] || '#fff';
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = color;
+    // Cheap glow: semi-transparent halo instead of shadowBlur
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
   }
 }

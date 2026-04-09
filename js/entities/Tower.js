@@ -49,7 +49,7 @@ class Tower {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) {
         this.spawnTimer = C.SKEL_SPAWN_INTERVAL;
-        game.spawnSystem.spawnSkeleton(this, game);
+        game.spawnSys.spawnSkeleton(this, game);
       }
     }
   }
@@ -71,10 +71,6 @@ class Tower {
     const teamColor = this.team === 'player' ? '#2266ff' : '#cc2222';
     const innerColor = isNexus ? (this.team === 'player' ? '#4499ff' : '#ff6644') : '#aaaaaa';
 
-    // Shadow
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = teamColor;
-
     // Outer ring
     ctx.strokeStyle = teamColor;
     ctx.lineWidth = 3;
@@ -87,8 +83,6 @@ class Tower {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius - 4, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.shadowBlur = 0;
 
     // Icon
     ctx.fillStyle = '#fff';

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wizard Wars</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 1. Constants -->
+  <script src="js/constants.js"></script>
+  <!-- 2. Utils + Particle -->
+  <script src="js/utils.js"></script>
+  <!-- 3. Wizard types + special entity classes -->
+  <script src="js/wizards/WizardTypes.js"></script>
+  <!-- 4. Entities -->
+  <script src="js/entities/Entity.js"></script>
+  <script src="js/entities/Wizard.js"></script>
+  <script src="js/entities/EnemyWizard.js"></script>
+  <script src="js/entities/Skeleton.js"></script>
+  <script src="js/entities/MegaSkeleton.js"></script>
+  <script src="js/entities/Boss.js"></script>
+  <script src="js/entities/Tower.js"></script>
+  <script src="js/entities/Projectile.js"></script>
+  <!-- 5. Systems -->
+  <script src="js/systems/GameMap.js"></script>
+  <script src="js/systems/SpawnSystem.js"></script>
+  <script src="js/systems/CollisionSystem.js"></script>
+  <script src="js/systems/CombatSystem.js"></script>
+  <script src="js/systems/BotAI.js"></script>
+  <script src="js/systems/GachaSystem.js"></script>
+  <!-- 6. UI -->
+  <script src="js/ui/StartScreen.js"></script>
+  <script src="js/ui/RosterUI.js"></script>
+  <script src="js/ui/HUD.js"></script>
+  <script src="js/ui/VictoryScreen.js"></script>
+  <!-- 7. Main -->
+  <script src="js/main.js"></script>
+</body>
+</html>
