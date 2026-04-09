@@ -75,7 +75,10 @@ class GachaSystem {
     try { localStorage.setItem(LS_GOLD_KEY, String(this.gold)); } catch {}
   }
   _loadGold() {
-    try { return parseInt(localStorage.getItem(LS_GOLD_KEY) || '0', 10) || 0; } catch { return 0; }
+    try {
+      const saved = localStorage.getItem(LS_GOLD_KEY);
+      return saved !== null ? (parseInt(saved, 10) || 0) : 200; // 200 startguld för nya spelare
+    } catch { return 200; }
   }
 
   // ── Drawing helpers ────────────────────────────────────────
