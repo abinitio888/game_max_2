@@ -87,10 +87,10 @@ class Boss extends Entity {
     this.x = this.spawnX + Math.cos(this.patrolAngle) * 20;
     this.y = this.spawnY + Math.sin(this.patrolAngle) * 12;
 
-    // Check if any player entity enters territory
+    // Bara trollkarlar (inte skelett) väcker bossen genom att gå in i området
     const intruders = [
       ...(game.playerWizard && game.playerWizard.alive ? [game.playerWizard] : []),
-      ...game.entities.filter(e => e.alive && e.team === 'player' && e.hp !== undefined),
+      ...(game.enemyWizard  && game.enemyWizard.alive  ? [game.enemyWizard]  : []),
     ];
     for (const e of intruders) {
       if (dist({ x: this.spawnX, y: this.spawnY }, e) < BOSS_TERRITORY) {
