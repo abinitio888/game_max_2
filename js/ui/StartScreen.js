@@ -19,7 +19,7 @@ class StartScreen {
     }
 
     // Start button
-    if (mx >= C.W / 2 - 80 && mx <= C.W / 2 + 80 && my >= 490 && my <= 530) {
+    if (mx >= C.W / 2 - 80 && mx <= C.W / 2 + 80 && my >= 415 && my <= 455) {
       if (this.gacha.getRoster().length > 0) {
         game.state = 'WIZARD_SELECT';
       } else {
@@ -28,7 +28,7 @@ class StartScreen {
     }
 
     // Adventure button
-    if (mx >= C.W / 2 - 80 && mx <= C.W / 2 + 80 && my >= 540 && my <= 574) {
+    if (mx >= C.W / 2 - 80 && mx <= C.W / 2 + 80 && my >= 463 && my <= 497) {
       game.state = 'ADVENTURE';
     }
 
@@ -124,25 +124,25 @@ class StartScreen {
     ctx.fillStyle = canStart ? '#2244cc' : '#443355';
     ctx.strokeStyle = canStart ? '#4477ff' : '#555';
     ctx.lineWidth = 2;
-    const bx = C.W / 2 - 80, by = 490;
+    const bx = C.W / 2 - 80, by = 415;
     if (ctx.roundRect) ctx.roundRect(bx, by, 160, 40, 8);
     else ctx.rect(bx, by, 160, 40);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = canStart ? '#fff' : '#888';
     ctx.font = 'bold 20px Arial';
-    ctx.fillText('▶ SPELA', C.W / 2, 516);
+    ctx.fillText('▶ SPELA', C.W / 2, 441);
 
     // Adventure button
     ctx.fillStyle = '#1a2a1a';
     ctx.strokeStyle = '#44ff88';
     ctx.lineWidth = 2;
-    const abx = C.W / 2 - 80, aby = 540;
+    const abx = C.W / 2 - 80, aby = 463;
     if (ctx.roundRect) ctx.roundRect(abx, aby, 160, 34, 8);
     else ctx.rect(abx, aby, 160, 34);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#44ff88';
     ctx.font = 'bold 15px Arial';
-    ctx.fillText('⚔ ÄVENTYR', C.W / 2, 562);
+    ctx.fillText('⚔ ÄVENTYR', C.W / 2, 485);
 
     // Roster
     this._drawRoster(ctx, game);
