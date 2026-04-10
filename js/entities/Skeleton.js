@@ -87,7 +87,7 @@ class Skeleton extends Entity {
       }
     }
 
-    this.x = clamp(this.x, C.LANE_LEFT[nearestLane(this.x)] + this.radius, C.LANE_RIGHT[nearestLane(this.x)] - this.radius);
+    this.x = clamp(this.x, this.radius, C.W - this.radius);
   }
 
   draw(ctx) {

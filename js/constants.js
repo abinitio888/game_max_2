@@ -8,10 +8,7 @@ const C = {
   LANE_CENTERS: [180, 480, 780],          // x centre of left / mid / right lane
   LANE_LEFT:    [80,  340, 680],          // left wall of each lane
   LANE_RIGHT:   [280, 620, 880],          // right wall of each lane
-  WALL_RECTS: [                           // impassable wall strips
-    { x: 280, y: 0, w: 60,  h: 640 },
-    { x: 620, y: 0, w: 60,  h: 640 },
-  ],
+  WALL_RECTS: [],                          // no walls — free movement across full map
   PLAYER_BASE_Y: 590,
   ENEMY_BASE_Y:  50,
   BOSS_Y: 270,
