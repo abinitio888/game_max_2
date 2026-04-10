@@ -68,6 +68,15 @@ canvas.addEventListener('touchstart', e => {
   handleClick(c.x, c.y);
 }, { passive: false });
 
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length > 0) {
+    const c = canvasCoords(e);
+    input.mouse.x = c.x;
+    input.mouse.y = c.y;
+  }
+}, { passive: false });
+
 // ── Game state ────────────────────────────────────────────────
 const game = {
   state:        'START_SCREEN', // START_SCREEN | WIZARD_SELECT | PLAYING | WIZARD_DEAD | GAME_OVER | ADVENTURE | ADVENTURE_BATTLE
@@ -351,6 +360,7 @@ function gameLoop(timestamp) {
 }
 
 function update(dt) {
+  mobileControls.update();
   switch (game.state) {
     case 'START_SCREEN':
       game.startScreen.update(dt);
@@ -516,4 +526,5 @@ const origHandleClick = handleClick;
 // ── Initialize and start ──────────────────────────────────────
 game.init();
 game.hud = new HUD();
+const mobileControls = new MobileControls(input);
 requestAnimationFrame(gameLoop);
