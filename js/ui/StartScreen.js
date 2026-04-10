@@ -49,7 +49,11 @@ class StartScreen {
       const cy = 590;
       const btnX = cx + 12, btnY = cy - 22;
       if (Math.hypot(mx - btnX, my - btnY) < 10) {
-        this.gacha.removeFromRoster(roster[roster.length - 1 - i].id);
+        const wd = roster[roster.length - 1 - i];
+        const refund = wd.stars === 3 ? 70 : wd.stars === 2 ? 50 : 30;
+        this.gacha.removeFromRoster(wd.id);
+        this.gacha.earnGold(refund);
+        game.announcements.push({ text: `+${refund} 💰 återbetalning`, duration: 1.5, maxDuration: 1.5 });
         return;
       }
     }

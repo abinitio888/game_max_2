@@ -25,7 +25,11 @@ class RosterUI {
       // × delete button (top-right corner of card)
       const delX = cx + cardW - 10, delY = cy + 10;
       if (Math.hypot(mx - delX, my - delY) < 10) {
-        game.gacha.removeFromRoster(available[i].id);
+        const wd = available[i];
+        const refund = wd.stars === 3 ? 70 : wd.stars === 2 ? 50 : 30;
+        game.gacha.removeFromRoster(wd.id);
+        game.gacha.earnGold(refund);
+        game.announcements.push({ text: `+${refund} 💰 återbetalning`, duration: 1.5, maxDuration: 1.5 });
         if (this.selectedIdx >= available.length - 1) this.selectedIdx = -1;
         return;
       }
