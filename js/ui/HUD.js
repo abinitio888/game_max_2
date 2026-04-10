@@ -14,14 +14,14 @@ class HUD {
     const pw = game.playerWizard;
     if (!pw || !pw.alive) return;
 
-    const px = 10, py = C.H - 104;
+    const px = 10, py = C.H - 128;
 
     // Panel bg
     ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.fillRect(px, py, 220, 94);
+    ctx.fillRect(px, py, 220, 118);
     ctx.strokeStyle = pw.color;
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(px, py, 220, 94);
+    ctx.strokeRect(px, py, 220, 118);
 
     // Type + stars
     ctx.fillStyle = pw.color;
@@ -71,25 +71,26 @@ class HUD {
     ];
     spells.forEach((sp, i) => {
       const bx = px + 8 + i * 70;
-      const by = py + 72;
+      const by = py + 88;
+      const bh = 24;
       // Icon box
       ctx.fillStyle = sp.ready ? sp.color : '#333';
-      ctx.fillRect(bx, by, 62, 18);
+      ctx.fillRect(bx, by, 62, bh);
       ctx.strokeStyle = sp.ready ? sp.color : '#555';
       ctx.lineWidth = 1;
-      ctx.strokeRect(bx, by, 62, 18);
+      ctx.strokeRect(bx, by, 62, bh);
       // Cooldown fill overlay
       if (!sp.ready) {
         const pct = clamp(sp.timer / (sp.key === 'Q' ? pw.abilityCooldown : sp.key === 'E' ? C.RUSH_COOLDOWN : pw.ultimateCooldown), 0, 1);
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(bx, by, 62 * pct, 18);
+        ctx.fillRect(bx, by, 62 * pct, bh);
       }
       ctx.fillStyle = sp.ready ? '#000' : '#aaa';
-      ctx.font = 'bold 8px Arial';
+      ctx.font = 'bold 9px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(`[${sp.key}]`, bx + 2, by + 8);
-      ctx.font = '8px Arial';
-      ctx.fillText(sp.ready ? sp.label : sp.timer.toFixed(1) + 's', bx + 2, by + 16);
+      ctx.fillText(`[${sp.key}]`, bx + 3, by + 10);
+      ctx.font = '9px Arial';
+      ctx.fillText(sp.ready ? sp.label : sp.timer.toFixed(1) + 's', bx + 3, by + 20);
     });
   }
 
@@ -139,11 +140,11 @@ class HUD {
 
   _drawControls(ctx) {
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(C.W - 165, C.H - 104, 160, 100);
+    ctx.fillRect(C.W - 165, C.H - 128, 160, 118);
     ctx.fillStyle = '#888';
     ctx.font = '9px Arial';
     ctx.textAlign = 'left';
     const lines = ['WASD – Rör dig', 'Mus – Sikta', 'Klick/Mellanslag – Attackera', 'Q – Speciell förmåga', 'E – Rusa till nexus', 'R – Ultimat'];
-    lines.forEach((l, i) => ctx.fillText(l, C.W - 158, C.H - 74 + i * 13));
+    lines.forEach((l, i) => ctx.fillText(l, C.W - 158, C.H - 106 + i * 15));
   }
 }
