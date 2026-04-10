@@ -4,9 +4,32 @@
 class RosterUI {
   constructor() {
     this.selectedIdx = -1;
+    // minStars: 0 = alla, 1, 2, or 3
+    this.minStars = parseInt(localStorage.getItem('rosterMinStars') || '0', 10);
+  }
+
+  _setMinStars(n) {
+    this.minStars = n;
+    localStorage.setItem('rosterMinStars', String(n));
+    this.selectedIdx = -1;
   }
 
   handleClick(mx, my, game) {
+    // Star filter buttons (top of screen)
+    const filters = [0, 1, 2, 3];
+    const labels  = ['Alla', '★', '★★', '★★★'];
+    const fw = 70, fh = 28, fgap = 8;
+    const ftotalW = filters.length * fw + (filters.length - 1) * fgap;
+    const fx0 = C.W / 2 - ftotalW / 2;
+    const fy  = 92;
+    for (let f = 0; f < filters.length; f++) {
+      const bx = fx0 + f * (fw + fgap);
+      if (mx >= bx && mx <= bx + fw && my >= fy && my <= fy + fh) {
+        this._setMinStars(filters[f]);
+        return;
+      }
+    }
+
     const roster = game.gacha.getRoster();
     const usedIds = game.usedWizardIds || new Set();
     const available = roster.filter(w => !usedIds.has(w.id));
@@ -34,8 +57,11 @@ class RosterUI {
         return;
       }
 
+      // Only selectable if meets star filter
       if (mx >= cx && mx <= cx + cardW && my >= cy && my <= cy + cardH) {
-        this.selectedIdx = i;
+        if (available[i].stars >= (this.minStars || 1)) {
+          this.selectedIdx = i;
+        }
         return;
       }
     }
@@ -59,17 +85,54 @@ class RosterUI {
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 28px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Välj nästa trollkarl', C.W / 2, 80);
+    ctx.fillText('Välj nästa trollkarl', C.W / 2, 72);
+
+    // ── Star filter buttons ──────────────────────────────
+    const filters = [0, 1, 2, 3];
+    const labels  = ['Alla', '1★+', '2★+', '3★'];
+    const fw = 70, fh = 28, fgap = 8;
+    const ftotalW = filters.length * fw + (filters.length - 1) * fgap;
+    const fx0 = C.W / 2 - ftotalW / 2;
+    const fy  = 92;
+
+    ctx.font = '11px Arial';
+    ctx.fillStyle = '#888';
+    ctx.fillText('Visa bara:', fx0 - 44, fy + 18);
+
+    for (let f = 0; f < filters.length; f++) {
+      const bx = fx0 + f * (fw + fgap);
+      const active = this.minStars === filters[f];
+      ctx.fillStyle = active ? '#ffdd00' : '#222';
+      ctx.strokeStyle = active ? '#ffdd00' : '#555';
+      ctx.lineWidth = 1.5;
+      if (ctx.roundRect) ctx.roundRect(bx, fy, fw, fh, 6);
+      else ctx.rect(bx, fy, fw, fh);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = active ? '#000' : '#aaa';
+      ctx.font = active ? 'bold 11px Arial' : '11px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[f], bx + fw / 2, fy + 18);
+    }
 
     const roster = game.gacha.getRoster();
     const usedIds = game.usedWizardIds || new Set();
     const available = roster.filter(w => !usedIds.has(w.id));
+    const deployable = available.filter(w => w.stars >= (this.minStars || 1));
 
     if (available.length === 0) {
       ctx.fillStyle = '#ff4444';
       ctx.font = '22px Arial';
+      ctx.textAlign = 'center';
       ctx.fillText('Inga fler trollkarlar! Du förlorar...', C.W / 2, C.H / 2);
       setTimeout(() => game.endGame('enemy'), 2000);
+      return;
+    }
+
+    if (deployable.length === 0) {
+      ctx.fillStyle = '#ffaa00';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Inga trollkarlar matchar filtret — ändra filtret ovan', C.W / 2, C.H / 2);
       return;
     }
 
@@ -77,11 +140,12 @@ class RosterUI {
     const cardW = 100, cardH = 140, gap = 12;
     const totalW = cols * (cardW + gap) - gap;
     const startX = C.W / 2 - totalW / 2;
-    const startY = 160;
+    const startY = 180;
 
     ctx.fillStyle = '#aaa';
-    ctx.font = '13px Arial';
-    ctx.fillText(`Tillgängliga: ${available.length}`, C.W / 2, 118);
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Tillgängliga: ${available.length}  |  Matchar filter: ${deployable.length}`, C.W / 2, 142);
 
     for (let i = 0; i < available.length; i++) {
       const col = i % cols, row = Math.floor(i / cols);
@@ -89,32 +153,46 @@ class RosterUI {
       const cy = startY + row * (cardH + gap);
       const wd = available[i];
       const tw = WIZARD_TYPES[wd.type];
-      const sel = (i === this.selectedIdx);
+      const sel    = (i === this.selectedIdx);
+      const locked = wd.stars < (this.minStars || 1);
 
+      ctx.globalAlpha = locked ? 0.35 : 1;
       ctx.fillStyle = sel ? '#1a1a4e' : '#1a1a2e';
-      ctx.strokeStyle = sel ? '#ffdd00' : tw.color;
+      ctx.strokeStyle = sel ? '#ffdd00' : (locked ? '#444' : tw.color);
       ctx.lineWidth = sel ? 3 : 1.5;
       if (ctx.roundRect) ctx.roundRect(cx, cy, cardW, cardH, 8);
       else ctx.rect(cx, cy, cardW, cardH);
       ctx.fill(); ctx.stroke();
 
       // Wizard circle
-      ctx.fillStyle = tw.color;
+      ctx.fillStyle = locked ? '#444' : tw.color;
       ctx.beginPath();
       ctx.arc(cx + cardW / 2, cy + 44, 22, 0, Math.PI * 2);
       ctx.fill();
 
+      // Lock icon
+      if (locked) {
+        ctx.fillStyle = '#888';
+        ctx.font = '18px Arial';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔒', cx + cardW / 2, cy + 44);
+        ctx.textBaseline = 'alphabetic';
+      }
+
       // Stars
       for (let s = 0; s < wd.stars; s++) {
-        drawStar(ctx, cx + cardW / 2 - (wd.stars - 1) * 7 + s * 14, cy + 78, 6, '#FFD700');
+        drawStar(ctx, cx + cardW / 2 - (wd.stars - 1) * 7 + s * 14, cy + 78, 6,
+          locked ? '#666' : '#FFD700');
       }
 
       // Name
-      ctx.fillStyle = '#ddd';
+      ctx.fillStyle = locked ? '#666' : '#ddd';
       ctx.font = '9px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(tw.name, cx + cardW / 2, cy + 100);
       ctx.fillText(`Lv ${wd.level || 1}`, cx + cardW / 2, cy + 114);
+
+      ctx.globalAlpha = 1;
 
       // × delete button
       const delX = cx + cardW - 10, delY = cy + 10;
@@ -141,6 +219,7 @@ class RosterUI {
       ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
       ctx.fillText('Sänd ut!', C.W / 2, confY + 26);
     }
   }
