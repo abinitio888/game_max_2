@@ -201,7 +201,11 @@ class Wizard extends Entity {
   onDeath(game) {
     game.particles.push(...burst(this.x, this.y, this.color, 18));
     if (this.isPlayerControlled) {
-      game.state = 'WIZARD_DEAD';
+      if (game.adventureMode) {
+        game._adventureLose();
+      } else {
+        game.state = 'WIZARD_DEAD';
+      }
     } else {
       // Enemy wizard died — respawn them later
       if (game.playerWizard && game.playerWizard.alive) {

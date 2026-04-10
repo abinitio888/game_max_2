@@ -30,8 +30,11 @@ class RosterUI {
         return;
       }
 
+      // Only 3-star wizards can be selected
       if (mx >= cx && mx <= cx + cardW && my >= cy && my <= cy + cardH) {
-        this.selectedIdx = i;
+        if (available[i].stars === 3) {
+          this.selectedIdx = i;
+        }
         return;
       }
     }
@@ -56,15 +59,19 @@ class RosterUI {
     ctx.font = 'bold 28px Arial';
     ctx.textAlign = 'center';
     ctx.fillText('Välj nästa trollkarl', C.W / 2, 80);
+    ctx.fillStyle = '#ffdd00';
+    ctx.font = '13px Arial';
+    ctx.fillText('Endast ★★★ trollkarlar kan skickas ut', C.W / 2, 108);
 
     const roster = game.gacha.getRoster();
     const usedIds = game.usedWizardIds || new Set();
     const available = roster.filter(w => !usedIds.has(w.id));
+    const deployable = available.filter(w => w.stars === 3);
 
-    if (available.length === 0) {
+    if (deployable.length === 0) {
       ctx.fillStyle = '#ff4444';
       ctx.font = '22px Arial';
-      ctx.fillText('Inga fler trollkarlar! Du förlorar...', C.W / 2, C.H / 2);
+      ctx.fillText('Inga 3★ trollkarlar kvar! Du förlorar...', C.W / 2, C.H / 2);
       setTimeout(() => game.endGame('enemy'), 2000);
       return;
     }
@@ -76,8 +83,8 @@ class RosterUI {
     const startY = 180;
 
     ctx.fillStyle = '#aaa';
-    ctx.font = '14px Arial';
-    ctx.fillText(`Tillgängliga: ${available.length}`, C.W / 2, 130);
+    ctx.font = '13px Arial';
+    ctx.fillText(`3★ redo: ${deployable.length}  |  Totalt: ${available.length}`, C.W / 2, 138);
 
     for (let i = 0; i < available.length; i++) {
       const col = i % cols, row = Math.floor(i / cols);
@@ -86,34 +93,44 @@ class RosterUI {
       const wd = available[i];
       const tw = WIZARD_TYPES[wd.type];
       const sel = (i === this.selectedIdx);
+      const locked = wd.stars < 3;
 
+      ctx.globalAlpha = locked ? 0.4 : 1;
       ctx.fillStyle = sel ? '#1a1a4e' : '#1a1a2e';
-      ctx.strokeStyle = sel ? '#ffdd00' : tw.color;
+      ctx.strokeStyle = sel ? '#ffdd00' : (locked ? '#555' : tw.color);
       ctx.lineWidth = sel ? 3 : 1.5;
       if (ctx.roundRect) ctx.roundRect(cx, cy, cardW, cardH, 8);
       else ctx.rect(cx, cy, cardW, cardH);
       ctx.fill(); ctx.stroke();
 
       // Wizard circle
-      ctx.shadowBlur  = 10;
-      ctx.shadowColor = tw.glowColor;
-      ctx.fillStyle   = tw.color;
+      ctx.fillStyle = locked ? '#555' : tw.color;
       ctx.beginPath();
       ctx.arc(cx + cardW / 2, cy + 44, 22, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
 
       // Stars
       for (let s = 0; s < wd.stars; s++) {
-        drawStar(ctx, cx + cardW / 2 - (wd.stars - 1) * 7 + s * 14, cy + 78, 6, '#FFD700');
+        drawStar(ctx, cx + cardW / 2 - (wd.stars - 1) * 7 + s * 14, cy + 78, 6, locked ? '#888' : '#FFD700');
       }
 
       // Name
-      ctx.fillStyle = '#ddd';
+      ctx.fillStyle = locked ? '#888' : '#ddd';
       ctx.font = '9px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(tw.name, cx + cardW / 2, cy + 100);
       ctx.fillText(`Lv ${wd.level || 1}`, cx + cardW / 2, cy + 114);
+
+      // Lock icon on non-3-star
+      if (locked) {
+        ctx.fillStyle = '#aaa';
+        ctx.font = '18px Arial';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🔒', cx + cardW / 2, cy + 44);
+        ctx.textBaseline = 'alphabetic';
+      }
+
+      ctx.globalAlpha = 1;
 
       // × delete button
       const delX = cx + cardW - 10, delY = cy + 10;

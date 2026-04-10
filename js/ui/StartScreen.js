@@ -27,6 +27,11 @@ class StartScreen {
       }
     }
 
+    // Adventure button
+    if (mx >= C.W / 2 - 80 && mx <= C.W / 2 + 80 && my >= 540 && my <= 574) {
+      game.state = 'ADVENTURE';
+    }
+
     // Clear roster button
     if (mx >= C.W - 120 && mx <= C.W - 10 && my >= C.H - 34 && my <= C.H - 6) {
       if (confirm('Rensa hela samlingen?')) {
@@ -126,6 +131,18 @@ class StartScreen {
     ctx.fillStyle = canStart ? '#fff' : '#888';
     ctx.font = 'bold 20px Arial';
     ctx.fillText('▶ SPELA', C.W / 2, 516);
+
+    // Adventure button
+    ctx.fillStyle = '#1a2a1a';
+    ctx.strokeStyle = '#44ff88';
+    ctx.lineWidth = 2;
+    const abx = C.W / 2 - 80, aby = 540;
+    if (ctx.roundRect) ctx.roundRect(abx, aby, 160, 34, 8);
+    else ctx.rect(abx, aby, 160, 34);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#44ff88';
+    ctx.font = 'bold 15px Arial';
+    ctx.fillText('⚔ ÄVENTYR', C.W / 2, 562);
 
     // Roster
     this._drawRoster(ctx, game);

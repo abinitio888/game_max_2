@@ -70,9 +70,14 @@ canvas.addEventListener('touchstart', e => {
 
 // ── Game state ────────────────────────────────────────────────
 const game = {
-  state:        'START_SCREEN', // START_SCREEN | WIZARD_SELECT | PLAYING | WIZARD_DEAD | GAME_OVER
+  state:        'START_SCREEN', // START_SCREEN | WIZARD_SELECT | PLAYING | WIZARD_DEAD | GAME_OVER | ADVENTURE | ADVENTURE_BATTLE
   winner:       null,
   globalTimer:  0,
+
+  adventureMode:     false,
+  adventureBossIdx:  -1,
+  adventureBoss:     null,
+  _adventureEnding:  false,
 
   entities:     [],   // all active non-tower entities
   towers:       [],   // all 6 towers
@@ -106,11 +111,14 @@ const game = {
   startScreen: null,
   rosterUI:   new RosterUI(),
   victoryScreen: new VictoryScreen(),
+  adventureScreen: null,
 
   // ── Methods ──────────────────────────────────────────────
   init() {
-    this.gacha      = new GachaSystem();
-    this.startScreen = new StartScreen(this.gacha);
+    this.gacha           = new GachaSystem();
+    this.adventureSys    = new AdventureSystem();
+    this.startScreen     = new StartScreen(this.gacha);
+    this.adventureScreen = new AdventureScreen(this.adventureSys);
     this._setupTowers();
     this._setupBosses();
   },
@@ -161,15 +169,32 @@ const game = {
   deployPlayerWizard(wData) {
     this.usedWizardIds.add(wData.id);
     const w = new Wizard(wData, 'player');
+
+    // Apply permanent adventure bonuses
+    if (this.adventureSys) {
+      const adv = this.adventureSys.bonuses;
+      if (adv.damage) { w.atk *= (1 + adv.damage * 0.33); }
+      if (adv.health) { w.maxHp = Math.round(w.maxHp * (1 + adv.health * 0.33)); w.hp = w.maxHp; }
+      if (adv.speed)  { w.speed *= (1 + adv.speed  * 0.33); }
+    }
+
     w.x = this.playerNexus ? this.playerNexus.x : C.LANE_CENTERS[1];
     w.y = this.playerNexus ? this.playerNexus.y - 40 : C.PLAYER_BASE_Y - 40;
     this.playerWizard = w;
     this.entities.push(w);
-    this.state = 'PLAYING';
 
-    // Start enemy wizard if not present
-    if (!this.enemyWizard || !this.enemyWizard.alive) {
-      this.spawnEnemyWizard();
+    if (this.adventureMode) {
+      this.state = 'ADVENTURE_BATTLE';
+      // Boss should already be set up — make it aggro the player
+      if (this.adventureBoss) {
+        this.adventureBoss.aggroed = true;
+        this.adventureBoss.aggroTarget = w;
+      }
+    } else {
+      this.state = 'PLAYING';
+      if (!this.enemyWizard || !this.enemyWizard.alive) {
+        this.spawnEnemyWizard();
+      }
     }
   },
 
@@ -207,6 +232,76 @@ const game = {
     if (this.gacha) this.gacha.earnGold(amount);
   },
 
+  startAdventureBattle(bossIdx) {
+    this.adventureMode    = true;
+    this.adventureBossIdx = bossIdx;
+    this._adventureEnding = false;
+
+    // Reset arena
+    this.entities     = [];
+    this.towers       = [];
+    this.particles    = [];
+    this.announcements = [];
+    this.globalTimer  = 0;
+    this.playerWizard = null;
+    this.enemyWizard  = null;
+    this.usedWizardIds = new Set();
+    this.spawnSys     = new SpawnSystem();
+    this.botAI        = new BotAI();
+
+    // Player nexus only (spawn point, indestructible)
+    this.playerNexus = new Tower(C.LANE_CENTERS[1], C.PLAYER_BASE_Y, 'player', 'nexus');
+    this.playerNexus.hp = this.playerNexus.maxHp = 999999;
+    this.enemyNexus = null;
+    this.towers = [this.playerNexus];
+
+    // Spawn the chosen boss (doubled HP, starts aggroed)
+    const b = new Boss(C.LANE_CENTERS[1], C.H / 2 - 80, bossIdx);
+    b.hp = b.maxHp = C.BOSS_HP * 2;
+    b.aggroed = true;
+    this.adventureBoss = b;
+    this.entities = [b];
+    this.bosses   = [b];
+
+    this.state = 'WIZARD_SELECT';
+  },
+
+  _adventureWin(dropType) {
+    if (this._adventureEnding) return;
+    this._adventureEnding = true;
+    this.adventureSys.addBonus(dropType);
+    const name = ADV_BOSS_BONUS_LABEL[dropType];
+    this.announcements.push({
+      text: `🏆 Boss besegrad! +33% ${name} permanent!`,
+      duration: 3.5, maxDuration: 3.5,
+    });
+    setTimeout(() => this.resetToAdventure(), 3500);
+  },
+
+  _adventureLose() {
+    if (this._adventureEnding) return;
+    this._adventureEnding = true;
+    this.announcements.push({ text: '💀 Du förlorade! Försök igen.', duration: 2.5, maxDuration: 2.5 });
+    setTimeout(() => this.resetToAdventure(), 2500);
+  },
+
+  resetToAdventure() {
+    this.adventureMode    = false;
+    this.adventureBossIdx = -1;
+    this.adventureBoss    = null;
+    this._adventureEnding = false;
+    this.entities    = [];
+    this.towers      = [];
+    this.particles   = [];
+    this.announcements = [];
+    this.playerWizard  = null;
+    this.enemyWizard   = null;
+    this.usedWizardIds = new Set();
+    this.spawnSys = new SpawnSystem();
+    this.botAI    = new BotAI();
+    this.state = 'ADVENTURE';
+  },
+
   endGame(winner) {
     this.state  = 'GAME_OVER';
     this.winner = winner;
@@ -233,10 +328,11 @@ const game = {
 
 // ── Click dispatcher ─────────────────────────────────────────
 function handleClick(mx, my) {
-  if (game.state === 'START_SCREEN')  game.startScreen.handleClick(mx, my, game);
-  if (game.state === 'WIZARD_SELECT') game.rosterUI.handleClick(mx, my, game);
-  if (game.state === 'WIZARD_DEAD')   game.rosterUI.handleClick(mx, my, game);
-  if (game.state === 'GAME_OVER')     game.victoryScreen.handleClick(mx, my, game);
+  if (game.state === 'START_SCREEN')     game.startScreen.handleClick(mx, my, game);
+  if (game.state === 'ADVENTURE')        game.adventureScreen.handleClick(mx, my, game);
+  if (game.state === 'WIZARD_SELECT')    game.rosterUI.handleClick(mx, my, game);
+  if (game.state === 'WIZARD_DEAD')      game.rosterUI.handleClick(mx, my, game);
+  if (game.state === 'GAME_OVER')        game.victoryScreen.handleClick(mx, my, game);
 }
 
 // ── Game loop ─────────────────────────────────────────────────
@@ -305,6 +401,27 @@ function update(dt) {
       break;
     }
 
+    case 'ADVENTURE_BATTLE': {
+      game.globalTimer += dt;
+
+      if (game.playerWizard && game.playerWizard.alive) {
+        game.playerWizard.update(dt, input, game);
+      }
+      for (const t of game.towers) t.update(dt, game);
+      for (const e of game.entities) {
+        if (e.alive && e !== game.playerWizard) {
+          if (typeof e.update === 'function') e.update(dt, game);
+        }
+      }
+      game.collision.update(game);
+      game.entities = game.entities.filter(e => e.alive);
+      game.particles = game.particles.filter(p => { p.update(dt); return p.life > 0; });
+
+      // Tick announcements
+      game.announcements = game.announcements.filter(a => { a.duration -= dt; return a.duration > 0; });
+      break;
+    }
+
     case 'GAME_OVER':
       game.victoryScreen.update(dt);
       break;
@@ -319,6 +436,10 @@ function draw() {
   switch (game.state) {
     case 'START_SCREEN':
       game.startScreen.draw(ctx, game);
+      break;
+
+    case 'ADVENTURE':
+      game.adventureScreen.draw(ctx, game);
       break;
 
     case 'WIZARD_SELECT':
@@ -342,6 +463,24 @@ function draw() {
       game.map.draw(ctx);
       drawTowersAndEntities(ctx);
       game.rosterUI.draw(ctx, game);
+      break;
+
+    case 'ADVENTURE_BATTLE':
+      game.map.draw(ctx);
+      drawTowersAndEntities(ctx);
+      for (const p of game.particles) p.draw(ctx);
+      game.hud.draw(ctx, game);
+      // Adventure header (replaces normal HUD timer)
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(C.W / 2 - 140, 4, 280, 24);
+      ctx.fillStyle = '#ffdd44';
+      ctx.font = 'bold 13px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`⚔ ÄVENTYR — Döda ${BOSS_NAMES[game.adventureBossIdx] || ''}!`, C.W / 2, 20);
+      // Draw announcements
+      for (const ann of game.announcements) {
+        drawAnnouncement(ctx, ann.text, clamp(ann.duration / ann.maxDuration, 0, 1));
+      }
       break;
 
     case 'GAME_OVER':

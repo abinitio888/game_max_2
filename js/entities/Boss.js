@@ -56,8 +56,12 @@ class Boss extends Entity {
       game.playerWizard.gainXP(C.XP_BOSS);
       game.earnGold(C.GOLD_BOSS);
     }
-    game.entities.push(new ItemPickup(this.x, this.y, this.dropType));
-    game.announcements.push({ text: `${this.name} besegrad! +${this.dropType}`, duration: 3, maxDuration: 3 });
+    if (game.adventureMode) {
+      game._adventureWin(this.dropType);
+    } else {
+      game.entities.push(new ItemPickup(this.x, this.y, this.dropType));
+      game.announcements.push({ text: `${this.name} besegrad! +${this.dropType}`, duration: 3, maxDuration: 3 });
+    }
   }
 
   update(dt, game) {
