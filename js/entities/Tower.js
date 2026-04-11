@@ -51,6 +51,15 @@ class Tower {
         this.spawnTimer = C.SKEL_SPAWN_INTERVAL;
         game.spawnSys.spawnSkeleton(this, game);
       }
+
+      // Damage aura: 8 dmg/s to enemies within 60px
+      const AURA_R = 60, AURA_DPS = 8;
+      for (const e of game.entities) {
+        if (!e.alive || e.team === this.team || e.hp === undefined) continue;
+        if (dist(this, e) < AURA_R + (e.radius || 14)) {
+          e.takeDamage(AURA_DPS * dt, game);
+        }
+      }
     }
   }
 
@@ -70,6 +79,26 @@ class Tower {
     const isNexus = this.towerType === 'nexus';
     const teamColor = this.team === 'player' ? '#2266ff' : '#cc2222';
     const innerColor = isNexus ? (this.team === 'player' ? '#4499ff' : '#ff6644') : '#aaaaaa';
+
+    // Damage aura ring (skeleton towers only)
+    if (!isNexus) {
+      const pulse = Math.abs(Math.sin(Date.now() / 700)) * 0.08 + 0.04;
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = teamColor;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 60, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = teamColor;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 60, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
 
     // Outer ring
     ctx.strokeStyle = teamColor;
