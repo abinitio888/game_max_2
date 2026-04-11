@@ -150,19 +150,7 @@ class GachaSystem {
     ctx.roundRect ? ctx.roundRect(x, y, w, h, 8) : ctx.rect(x, y, w, h);
     ctx.fill(); ctx.stroke();
 
-    // Cheap glow ring instead of shadowBlur
-    ctx.globalAlpha = 0.4;
-    ctx.strokeStyle = tw.glowColor;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(x + w / 2, y + 42, 26, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-
-    ctx.fillStyle = tw.color;
-    ctx.beginPath();
-    ctx.arc(x + w / 2, y + 42, 22, 0, Math.PI * 2);
-    ctx.fill();
+    drawWizardSprite(ctx, x + w / 2, y + 42, tw.color, tw.glowColor, -Math.PI / 2, 18);
 
     for (let i = 0; i < wData.stars; i++) {
       drawStar(ctx, x + 18 + i * 18, y + 78, 6, '#FFD700');

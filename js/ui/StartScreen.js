@@ -191,19 +191,7 @@ class StartScreen {
       const cy = 590;
       const tw = WIZARD_TYPES[wd.type];
 
-      // Cheap glow ring
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = tw.glowColor;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-
-      ctx.fillStyle = tw.color;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 18, 0, Math.PI * 2);
-      ctx.fill();
+      drawWizardSprite(ctx, cx, cy, tw.color, tw.glowColor, -Math.PI / 2, 16);
 
       for (let s = 0; s < wd.stars; s++) {
         drawStar(ctx, cx - (wd.stars - 1) * 5 + s * 10, cy + 22, 4, '#FFD700');

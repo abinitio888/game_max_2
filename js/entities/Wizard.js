@@ -218,55 +218,35 @@ class Wizard extends Entity {
 
   draw(ctx) {
     if (!this.alive) return;
+
     const alpha = this.isInvisible ? 0.35 : 1;
     ctx.globalAlpha = alpha;
 
-    // Cheap glow ring instead of shadowBlur
-    ctx.globalAlpha = alpha * 0.35;
-    ctx.strokeStyle = this.glowColor;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = alpha;
+    // Full wizard sprite
+    drawWizardSprite(ctx, this.x, this.y, this.color, this.glowColor, this.facingAngle, this.radius);
 
-    // Body
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Outline
-    ctx.strokeStyle = this.isPlayerControlled ? '#fff' : '#ff8888';
+    // Team outline ring
+    ctx.strokeStyle = this.isPlayerControlled ? 'rgba(255,255,255,0.7)' : 'rgba(255,100,100,0.7)';
     ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // Hat (pointing in facing direction)
-    const hx = this.x + Math.cos(this.facingAngle) * 9;
-    const hy = this.y + Math.sin(this.facingAngle) * 9;
-    const pa = this.facingAngle - Math.PI / 2;
-    ctx.fillStyle = this.color;
     ctx.beginPath();
-    ctx.moveTo(hx + Math.cos(pa) * 8, hy + Math.sin(pa) * 8);
-    ctx.lineTo(hx - Math.cos(pa) * 8, hy - Math.sin(pa) * 8);
-    ctx.lineTo(hx + Math.cos(this.facingAngle) * 16, hy + Math.sin(this.facingAngle) * 16);
-    ctx.closePath();
-    ctx.fill();
-
-    // Stars above head
-    for (let i = 0; i < this.stars; i++) {
-      drawStar(ctx, this.x - (this.stars - 1) * 5 + i * 10, this.y - 24, 4, '#FFD700');
-    }
+    ctx.arc(this.x, this.y, this.radius + 2, 0, Math.PI * 2);
+    ctx.stroke();
 
     ctx.globalAlpha = 1;
 
+    // Stars above head (above hat)
+    const starY = this.y - this.radius * 2.8;
+    for (let i = 0; i < this.stars; i++) {
+      drawStar(ctx, this.x - (this.stars - 1) * 6 + i * 12, starY, 5, '#FFD700');
+    }
+
     // HP bar
-    drawHpBar(ctx, this.x, this.y + this.radius + 3, 28, this.hp, this.maxHp);
+    drawHpBar(ctx, this.x, this.y + this.radius * 1.4, 30, this.hp, this.maxHp);
 
     // Level badge
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 9px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`Lv${this.level}`, this.x, this.y + this.radius + 18);
+    ctx.fillText(`Lv${this.level}`, this.x, this.y + this.radius * 1.4 + 14);
   }
 }

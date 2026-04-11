@@ -146,3 +146,141 @@ function resolveWallCollision(entity) {
     }
   }
 }
+
+// ============================================================
+//  WIZARD SPRITE  –  reusable canvas drawing for any radius
+// ============================================================
+function drawWizardSprite(ctx, x, y, color, glowColor, facingAngle, r) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  // Glow aura
+  ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = glowColor;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.arc(0, 0, r + 5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Hat lean direction (subtle)
+  const lx = Math.cos(facingAngle) * r * 0.18;
+  const ly = Math.sin(facingAngle) * r * 0.18;
+
+  // ── Robe ────────────────────────────────────────────────
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.52, -r * 0.25);   // shoulders
+  ctx.lineTo( r * 0.52, -r * 0.25);
+  ctx.lineTo( r * 0.88,  r * 1.05);   // robe bottom-right
+  ctx.quadraticCurveTo(0, r * 1.28, -r * 0.88, r * 1.05);
+  ctx.closePath();
+  ctx.fill();
+
+  // Robe trim / hem highlight
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.88, r * 1.05);
+  ctx.quadraticCurveTo(0, r * 1.28, r * 0.88, r * 1.05);
+  ctx.stroke();
+
+  // Robe centre stripe
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.14, -r * 0.25);
+  ctx.lineTo( r * 0.14, -r * 0.25);
+  ctx.lineTo( r * 0.28,  r * 1.1);
+  ctx.lineTo(-r * 0.28,  r * 1.1);
+  ctx.closePath();
+  ctx.fill();
+
+  // ── Wand arm (right side) ────────────────────────────────
+  const wx = Math.cos(facingAngle) * r * 1.5;
+  const wy = Math.sin(facingAngle) * r * 1.5;
+  ctx.strokeStyle = '#7a4a1a';
+  ctx.lineWidth   = r * 0.18;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(r * 0.42, r * 0.2);
+  ctx.lineTo(r * 0.42 + wx, r * 0.2 + wy);
+  ctx.stroke();
+  // Wand-tip glow
+  ctx.fillStyle = glowColor;
+  ctx.globalAlpha = 0.85;
+  ctx.beginPath();
+  ctx.arc(r * 0.42 + wx, r * 0.2 + wy, r * 0.28, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.4;
+  ctx.beginPath();
+  ctx.arc(r * 0.42 + wx, r * 0.2 + wy, r * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // ── Head ────────────────────────────────────────────────
+  ctx.fillStyle = '#f5ccaa';
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.55, r * 0.48, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Beard
+  ctx.fillStyle = 'rgba(230,230,245,0.85)';
+  ctx.beginPath();
+  ctx.ellipse(0, -r * 0.18, r * 0.32, r * 0.32, 0, 0, Math.PI);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(-r * 0.17, -r * 0.6, r * 0.09, 0, Math.PI * 2);
+  ctx.arc( r * 0.17, -r * 0.6, r * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+  // Eye gleam
+  ctx.fillStyle = 'rgba(255,255,255,0.65)';
+  ctx.beginPath();
+  ctx.arc(-r * 0.13, -r * 0.64, r * 0.04, 0, Math.PI * 2);
+  ctx.arc( r * 0.21, -r * 0.64, r * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ── Hat ─────────────────────────────────────────────────
+  // Brim
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, -r, r * 0.72, r * 0.19, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(0, -r, r * 0.72, r * 0.19, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Cone
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.58, -r * 1.04);
+  ctx.lineTo( r * 0.58, -r * 1.04);
+  ctx.lineTo(lx, -r * 2.5 + ly);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Hat star
+  ctx.fillStyle = '#FFD700';
+  ctx.globalAlpha = 0.8;
+  const sx = lx * 0.45, sy = -r * 1.6 + ly * 0.45;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+    const ri = i % 2 === 0 ? r * 0.13 : r * 0.06;
+    if (i === 0) ctx.moveTo(sx + Math.cos(a) * ri, sy + Math.sin(a) * ri);
+    else         ctx.lineTo(sx + Math.cos(a) * ri, sy + Math.sin(a) * ri);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+

@@ -164,19 +164,20 @@ class RosterUI {
       else ctx.rect(cx, cy, cardW, cardH);
       ctx.fill(); ctx.stroke();
 
-      // Wizard circle
-      ctx.fillStyle = locked ? '#444' : tw.color;
-      ctx.beginPath();
-      ctx.arc(cx + cardW / 2, cy + 44, 22, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Lock icon
+      // Wizard sprite (grayed if locked)
       if (locked) {
+        ctx.fillStyle = '#444';
+        ctx.beginPath();
+        ctx.arc(cx + cardW / 2, cy + 44, 22, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = '#888';
         ctx.font = '18px Arial';
         ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
         ctx.fillText('🔒', cx + cardW / 2, cy + 44);
         ctx.textBaseline = 'alphabetic';
+      } else {
+        drawWizardSprite(ctx, cx + cardW / 2, cy + 44, tw.color, tw.glowColor, -Math.PI / 2, 18);
       }
 
       // Stars
