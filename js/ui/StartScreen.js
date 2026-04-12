@@ -33,7 +33,7 @@ class StartScreen {
     }
 
     // Clear roster button
-    if (mx >= C.W - 120 && mx <= C.W - 10 && my >= C.H - 34 && my <= C.H - 6) {
+    if (mx >= C.W - 124 && mx <= C.W - 6 && my >= C.H - 36 && my <= C.H - 8) {
       if (confirm('Rensa hela samlingen?')) {
         try { localStorage.removeItem(LS_KEY); } catch {}
         this.gacha.roster = [];
@@ -64,94 +64,135 @@ class StartScreen {
   }
 
   draw(ctx, game) {
-    // Background
-    ctx.fillStyle = '#0d0d1a';
+    // ── Background gradient ───────────────────────────────────
+    const bg = ctx.createLinearGradient(0, 0, 0, C.H);
+    bg.addColorStop(0,   '#08041a');
+    bg.addColorStop(0.5, '#0d0d22');
+    bg.addColorStop(1,   '#050816');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, C.W, C.H);
     this._drawStars(ctx);
 
-    // Title
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 52px Arial';
+    // Subtle vignette
+    const vig = ctx.createRadialGradient(C.W/2, C.H/2, C.H*0.3, C.W/2, C.H/2, C.H*0.85);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, C.W, C.H);
+
+    // ── Title ────────────────────────────────────────────────
+    // Shadow
+    ctx.fillStyle = 'rgba(80,0,160,0.5)';
+    ctx.font = 'bold 54px Arial';
     ctx.textAlign = 'center';
+    ctx.fillText('⚗ TROLLKARNAS KRIG', C.W / 2 + 3, 83);
+    // Main
+    ctx.fillStyle = '#e8e0ff';
     ctx.fillText('⚗ TROLLKARNAS KRIG', C.W / 2, 80);
-    ctx.fillStyle = '#aaaacc';
-    ctx.font = '16px Arial';
-    ctx.fillText('Öppna ägg för att samla trollkarlar och strid mot AI', C.W / 2, 115);
+    // Glow underline
+    ctx.strokeStyle = 'rgba(160,80,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(C.W / 2 - 220, 90);
+    ctx.lineTo(C.W / 2 + 220, 90);
+    ctx.stroke();
 
-    // Gold display
+    ctx.fillStyle = '#8888bb';
+    ctx.font = '14px Arial';
+    ctx.fillText('Öppna ägg · Samla trollkarlar · Strid mot AI', C.W / 2, 110);
+
+    // ── Gold display ─────────────────────────────────────────
     const gold = this.gacha.gold;
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(C.W / 2 - 70, 130, 140, 32);
-    ctx.strokeStyle = '#e8b84b';
+    ctx.fillStyle = 'rgba(20,14,4,0.9)';
+    if (ctx.roundRect) ctx.roundRect(C.W / 2 - 80, 122, 160, 34, 8);
+    else ctx.rect(C.W / 2 - 80, 122, 160, 34);
+    ctx.fill();
+    ctx.strokeStyle = '#c8902a';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(C.W / 2 - 70, 130, 140, 32);
-    ctx.fillStyle = '#e8b84b';
-    ctx.font = 'bold 18px Arial';
-    ctx.fillText(`💰 ${gold} guld`, C.W / 2, 152);
+    if (ctx.roundRect) ctx.roundRect(C.W / 2 - 80, 122, 160, 34, 8);
+    else ctx.rect(C.W / 2 - 80, 122, 160, 34);
+    ctx.stroke();
+    ctx.fillStyle = '#f0c040';
+    ctx.font = 'bold 17px Arial';
+    ctx.fillText(`💰 ${gold} guld`, C.W / 2, 144);
 
-    // Egg section
-    ctx.fillStyle = '#ccccdd';
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText('— Öppna ett magiskt ägg —', C.W / 2, 198);
+    // ── Egg section label ────────────────────────────────────
+    ctx.fillStyle = '#9988cc';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('— Öppna ett magiskt ägg —', C.W / 2, 186);
+    ctx.fillStyle = '#555577';
+    ctx.font = '10px Arial';
+    ctx.fillText('1★ 50%   2★ 30%   3★ 20%', C.W / 2, 202);
 
-    // Probability info
-    ctx.fillStyle = '#888';
-    ctx.font = '11px Arial';
-    ctx.fillText('1★ 50%   2★ 30%   3★ 20%', C.W / 2, 218);
-
-    // Single egg
-    const ex = C.W / 2, ey = 300;
+    // ── Egg ──────────────────────────────────────────────────
+    const ex = C.W / 2, ey = 295;
     if (this.gacha.eggPhase !== 'idle') {
       this.gacha.drawEggAnimation(ctx, ex, ey);
     } else {
       this.gacha._drawEgg(ctx, ex, ey, 1, 0);
     }
 
-    // Cost label under egg
+    // Cost label
     const canAfford = gold >= C.GOLD_EGG_COST;
-    ctx.fillStyle = canAfford ? '#e8b84b' : '#cc4444';
-    ctx.font = 'bold 13px Arial';
-    ctx.fillText(`Kostar ${C.GOLD_EGG_COST} 💰`, ex, ey + 60);
+    ctx.fillStyle = canAfford ? '#f0c040' : '#cc4444';
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText(`Kostar ${C.GOLD_EGG_COST} 💰`, ex, ey + 58);
     if (!canAfford) {
       ctx.fillStyle = '#cc4444';
-      ctx.font = '11px Arial';
-      ctx.fillText('Inte råd — spela för att tjäna guld!', ex, ey + 76);
+      ctx.font = '10px Arial';
+      ctx.fillText('Inte råd — spela för att tjäna guld!', ex, ey + 72);
     }
+    ctx.fillStyle = '#3a3a55';
+    ctx.font = '9px Arial';
+    ctx.fillText(`Skelett +${C.GOLD_SKEL}  Boss +${C.GOLD_BOSS}  Torn +${C.GOLD_TOWER}  Trollkarl +${C.GOLD_ENEMY_WIZ}`, ex, ey + 88);
 
-    // How to earn gold
-    ctx.fillStyle = '#555';
-    ctx.font = '10px Arial';
-    ctx.fillText(`Skelett +${C.GOLD_SKEL}  Boss +${C.GOLD_BOSS}  Torn +${C.GOLD_TOWER}  Trollkarl +${C.GOLD_ENEMY_WIZ}`, ex, ey + 95);
-
-    // Start button
+    // ── Buttons ───────────────────────────────────────────────
     const canStart = this.gacha.getRoster().length > 0;
-    ctx.fillStyle = canStart ? '#2244cc' : '#443355';
-    ctx.strokeStyle = canStart ? '#4477ff' : '#555';
+    const bx = C.W / 2 - 88, by = 410;
+
+    // SPELA button
+    ctx.fillStyle = canStart ? '#162560' : '#221836';
+    if (ctx.roundRect) ctx.roundRect(bx, by, 176, 44, 10);
+    else ctx.rect(bx, by, 176, 44);
+    ctx.fill();
+    if (canStart) {
+      ctx.fillStyle = 'rgba(80,140,255,0.15)';
+      if (ctx.roundRect) ctx.roundRect(bx, by, 176, 22, [10, 10, 0, 0]);
+      else ctx.rect(bx, by, 176, 22);
+      ctx.fill();
+    }
+    ctx.strokeStyle = canStart ? '#4477ff' : '#443366';
     ctx.lineWidth = 2;
-    const bx = C.W / 2 - 80, by = 415;
-    if (ctx.roundRect) ctx.roundRect(bx, by, 160, 40, 8);
-    else ctx.rect(bx, by, 160, 40);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = canStart ? '#fff' : '#888';
+    if (ctx.roundRect) ctx.roundRect(bx, by, 176, 44, 10);
+    else ctx.rect(bx, by, 176, 44);
+    ctx.stroke();
+    ctx.fillStyle = canStart ? '#ffffff' : '#555577';
     ctx.font = 'bold 20px Arial';
-    ctx.fillText('▶ SPELA', C.W / 2, 441);
+    ctx.fillText('▶  SPELA', C.W / 2, by + 28);
 
-    // Adventure button
-    ctx.fillStyle = '#1a2a1a';
-    ctx.strokeStyle = '#44ff88';
-    ctx.lineWidth = 2;
-    const abx = C.W / 2 - 80, aby = 463;
-    if (ctx.roundRect) ctx.roundRect(abx, aby, 160, 34, 8);
-    else ctx.rect(abx, aby, 160, 34);
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#44ff88';
-    ctx.font = 'bold 15px Arial';
-    ctx.fillText('⚔ ÄVENTYR', C.W / 2, 485);
+    // ÄVENTYR button
+    const aby = by + 54;
+    ctx.fillStyle = '#0d1f10';
+    if (ctx.roundRect) ctx.roundRect(bx, aby, 176, 38, 10);
+    else ctx.rect(bx, aby, 176, 38);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(40,180,80,0.12)';
+    if (ctx.roundRect) ctx.roundRect(bx, aby, 176, 19, [10, 10, 0, 0]);
+    else ctx.rect(bx, aby, 176, 19);
+    ctx.fill();
+    ctx.strokeStyle = '#33bb55';
+    ctx.lineWidth = 1.8;
+    if (ctx.roundRect) ctx.roundRect(bx, aby, 176, 38, 10);
+    else ctx.rect(bx, aby, 176, 38);
+    ctx.stroke();
+    ctx.fillStyle = '#44ee77';
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText('⚔  ÄVENTYR', C.W / 2, aby + 24);
 
-    // Roster
+    // ── Roster ───────────────────────────────────────────────
     this._drawRoster(ctx, game);
 
-    // Announcements
+    // ── Announcements ────────────────────────────────────────
     game.announcements = game.announcements.filter(a => {
       a.duration -= 1 / 60;
       return a.duration > 0;
@@ -160,13 +201,20 @@ class StartScreen {
       drawAnnouncement(ctx, ann.text, clamp(ann.duration / ann.maxDuration, 0, 1));
     }
 
-    // Clear button
-    ctx.fillStyle = '#333';
-    ctx.fillRect(C.W - 120, C.H - 34, 110, 28);
-    ctx.fillStyle = '#888';
+    // ── Clear roster button ───────────────────────────────────
+    ctx.fillStyle = 'rgba(30,10,10,0.8)';
+    if (ctx.roundRect) ctx.roundRect(C.W - 124, C.H - 36, 118, 28, 6);
+    else ctx.rect(C.W - 124, C.H - 36, 118, 28);
+    ctx.fill();
+    ctx.strokeStyle = '#553333';
+    ctx.lineWidth = 1;
+    if (ctx.roundRect) ctx.roundRect(C.W - 124, C.H - 36, 118, 28, 6);
+    else ctx.rect(C.W - 124, C.H - 36, 118, 28);
+    ctx.stroke();
+    ctx.fillStyle = '#774444';
     ctx.font = '10px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Rensa samling', C.W - 116, C.H - 17);
+    ctx.textAlign = 'center';
+    ctx.fillText('🗑 Rensa samling', C.W - 65, C.H - 18);
   }
 
   _drawRoster(ctx, game) {
@@ -219,13 +267,14 @@ class StartScreen {
   }
 
   _drawStars(ctx) {
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    for (let i = 0; i < 80; i++) {
-      const x = ((i * 127 + 43) % C.W);
-      const y = ((i * 91  + 17) % 480);
-      const r = (i % 3 === 0) ? 1.5 : 1;
+    for (let i = 0; i < 140; i++) {
+      const sx = ((i * 173 + 43) % C.W);
+      const sy = ((i * 113 + 17) % C.H);
+      const sr = (i % 5 === 0) ? 1.8 : (i % 3 === 0) ? 1.2 : 0.7;
+      const alpha = (i % 7 === 0) ? 0.9 : (i % 3 === 0) ? 0.6 : 0.35;
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
       ctx.fill();
     }
   }

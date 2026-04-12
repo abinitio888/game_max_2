@@ -148,18 +148,39 @@ class Boss extends Entity {
         this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.1);
       }
     }
+
+    // Push boss out of any tower it overlaps
+    this._resolveTowerCollisions(game);
+  }
+
+  _resolveTowerCollisions(game) {
+    for (const t of game.towers) {
+      if (t.destroyed) continue;
+      const dx = this.x - t.x;
+      const dy = this.y - t.y;
+      const d  = Math.hypot(dx, dy);
+      const minDist = this.radius + t.radius;
+      if (d < minDist && d > 0) {
+        const push = (minDist - d) / d;
+        this.x += dx * push;
+        this.y += dy * push;
+      }
+    }
   }
 
   draw(ctx) {
     if (!this.alive) return;
+    const cx = this.x, cy = this.y;
+    const r  = this.radius; // 22
+    const t  = Date.now() / 1000;
 
-    // Territory zone (shown when dormant)
+    // ── Territory zone (dormant) ─────────────────────────────
     if (!this.aggroed) {
-      const pulse = Math.abs(Math.sin(Date.now() / 1200)) * 0.12 + 0.06;
+      const pulse = Math.abs(Math.sin(t * 0.8)) * 0.1 + 0.05;
       ctx.globalAlpha = pulse;
       ctx.strokeStyle = this.color;
       ctx.lineWidth = 2;
-      ctx.setLineDash([8, 10]);
+      ctx.setLineDash([10, 12]);
       ctx.beginPath();
       ctx.arc(this.spawnX, this.spawnY, BOSS_TERRITORY, 0, Math.PI * 2);
       ctx.stroke();
@@ -167,63 +188,157 @@ class Boss extends Entity {
       ctx.globalAlpha = 1;
     }
 
-    // Glow ring (brighter when aggroed)
-    ctx.globalAlpha = this.aggroed ? 0.55 : 0.25;
-    ctx.strokeStyle = this.color;
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius + 6, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // ── Outer aura ───────────────────────────────────────────
+    const auraSize = this.aggroed ? (0.45 + Math.sin(t * 3) * 0.08) : 0.22;
+    ctx.globalAlpha = auraSize;
+    ctx.fillStyle = this.color;
+    ctx.beginPath(); ctx.arc(0, 0, r * 2.4, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
 
-    // Body
-    ctx.fillStyle = this.color;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Horns
-    ctx.fillStyle = '#222';
-    ctx.beginPath();
-    ctx.moveTo(this.x - 12, this.y - this.radius);
-    ctx.lineTo(this.x - 6,  this.y - this.radius - 14);
-    ctx.lineTo(this.x,      this.y - this.radius);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(this.x,      this.y - this.radius);
-    ctx.lineTo(this.x + 6,  this.y - this.radius - 14);
-    ctx.lineTo(this.x + 12, this.y - this.radius);
-    ctx.fill();
-
-    // Eyes — red when aggroed, yellow when dormant
-    ctx.fillStyle = this.aggroed ? '#ff2200' : '#ff0';
-    ctx.beginPath();
-    ctx.arc(this.x - 7, this.y - 5, 4, 0, Math.PI * 2);
-    ctx.arc(this.x + 7, this.y - 5, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Phase 2 indicator
+    // Phase 2 extra aura ring
     if (this.phase === 2) {
-      ctx.strokeStyle = '#ff0000';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.globalAlpha = 0.5 + Math.sin(t * 5) * 0.2;
+      ctx.strokeStyle = '#ff2200';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(0, 0, r + 10 + Math.sin(t * 4) * 3, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
     }
 
-    // HP bar + name (only when aggroed or phase 2)
+    // ── Wings ────────────────────────────────────────────────
+    const wingFlap = this.aggroed ? Math.sin(t * 4) * 0.15 : 0.05;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    // Left wing
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.4, -r * 0.3);
+    ctx.quadraticCurveTo(-r * 2.5, -r * 1.5 + wingFlap * r * 3, -r * 2.8, r * 0.6);
+    ctx.quadraticCurveTo(-r * 2.0,  r * 0.4, -r * 1.2, r * 0.6);
+    ctx.quadraticCurveTo(-r * 0.8, -r * 0.1, -r * 0.4, -r * 0.3);
+    ctx.fill();
+    ctx.fillStyle = this.color + '44';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.4, -r * 0.3);
+    ctx.quadraticCurveTo(-r * 2.4, -r * 1.4 + wingFlap * r * 3, -r * 2.7, r * 0.5);
+    ctx.quadraticCurveTo(-r * 1.9,  r * 0.3, -r * 1.1, r * 0.5);
+    ctx.quadraticCurveTo(-r * 0.7, -r * 0.05, -r * 0.4, -r * 0.3);
+    ctx.fill();
+    // Right wing (mirrored)
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.4, -r * 0.3);
+    ctx.quadraticCurveTo(r * 2.5, -r * 1.5 + wingFlap * r * 3, r * 2.8, r * 0.6);
+    ctx.quadraticCurveTo(r * 2.0,  r * 0.4, r * 1.2, r * 0.6);
+    ctx.quadraticCurveTo(r * 0.8, -r * 0.1, r * 0.4, -r * 0.3);
+    ctx.fill();
+    ctx.fillStyle = this.color + '44';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.4, -r * 0.3);
+    ctx.quadraticCurveTo(r * 2.4, -r * 1.4 + wingFlap * r * 3, r * 2.7, r * 0.5);
+    ctx.quadraticCurveTo(r * 1.9,  r * 0.3, r * 1.1, r * 0.5);
+    ctx.quadraticCurveTo(r * 0.7, -r * 0.05, r * 0.4, -r * 0.3);
+    ctx.fill();
+
+    // ── Shadow under body ────────────────────────────────────
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath(); ctx.arc(r * 0.2, r * 0.3, r * 0.9, 0, Math.PI * 2); ctx.fill();
+
+    // ── Body ─────────────────────────────────────────────────
+    ctx.fillStyle = this.color;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    // Body shading
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.arc(r * 0.25, r * 0.2, r * 0.8, 0, Math.PI * 2); ctx.fill();
+    // Chest highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath(); ctx.arc(-r * 0.2, -r * 0.2, r * 0.5, 0, Math.PI * 2); ctx.fill();
+
+    // ── Horns ────────────────────────────────────────────────
+    ctx.fillStyle = '#1a0808';
+    // Left horn
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.55, -r * 0.75);
+    ctx.quadraticCurveTo(-r * 0.9, -r * 1.9, -r * 0.3, -r * 2.3);
+    ctx.quadraticCurveTo(-r * 0.5, -r * 1.5, -r * 0.1, -r * 0.82);
+    ctx.closePath(); ctx.fill();
+    // Right horn
+    ctx.beginPath();
+    ctx.moveTo(r * 0.55, -r * 0.75);
+    ctx.quadraticCurveTo(r * 0.9, -r * 1.9, r * 0.3, -r * 2.3);
+    ctx.quadraticCurveTo(r * 0.5, -r * 1.5, r * 0.1, -r * 0.82);
+    ctx.closePath(); ctx.fill();
+    // Horn highlights
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.5, -r * 0.8);
+    ctx.quadraticCurveTo(-r * 0.7, -r * 1.5, -r * 0.35, -r * 2.1);
+    ctx.lineTo(-r * 0.3, -r * 2.0);
+    ctx.quadraticCurveTo(-r * 0.6, -r * 1.4, -r * 0.38, -r * 0.82);
+    ctx.closePath(); ctx.fill();
+
+    // ── Face ─────────────────────────────────────────────────
+    // Eyes (3 sets for intimidation)
+    const eyeColor = this.aggroed
+      ? (this.phase === 2 ? '#ff0000' : '#ff4400')
+      : '#ddcc00';
+    // Main eyes
+    ctx.fillStyle = '#1a0808';
+    ctx.beginPath(); ctx.arc(-r * 0.28, -r * 0.2, r * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc( r * 0.28, -r * 0.2, r * 0.22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = eyeColor;
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath(); ctx.arc(-r * 0.28, -r * 0.2, r * 0.15, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc( r * 0.28, -r * 0.2, r * 0.15, 0, Math.PI * 2); ctx.fill();
+    // Vertical slit pupils
+    ctx.fillStyle = '#000';
+    ctx.globalAlpha = 1;
+    ctx.fillRect(-r * 0.3,  -r * 0.32, r * 0.04, r * 0.24);
+    ctx.fillRect( r * 0.26, -r * 0.32, r * 0.04, r * 0.24);
+    // Third eye (forehead, only aggroed)
+    if (this.aggroed) {
+      ctx.fillStyle = '#1a0808';
+      ctx.beginPath(); ctx.arc(0, -r * 0.55, r * 0.14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = eyeColor;
+      ctx.globalAlpha = 0.8 + Math.sin(t * 6) * 0.2;
+      ctx.beginPath(); ctx.arc(0, -r * 0.55, r * 0.09, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    // Mouth / fangs
+    ctx.fillStyle = '#1a0808';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.4, r * 0.2);
+    ctx.quadraticCurveTo(0, r * 0.55, r * 0.4, r * 0.2);
+    ctx.quadraticCurveTo(0, r * 0.35, -r * 0.4, r * 0.2);
+    ctx.fill();
+    // Fangs
+    ctx.fillStyle = '#ffe8cc';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.25, r * 0.22); ctx.lineTo(-r * 0.18, r * 0.44); ctx.lineTo(-r * 0.1, r * 0.22);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo( r * 0.1, r * 0.22); ctx.lineTo( r * 0.18, r * 0.44); ctx.lineTo( r * 0.25, r * 0.22);
+    ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+
+    // ── Name + HP ─────────────────────────────────────────────
     if (this.aggroed || this.phase === 2) {
-      drawHpBar(ctx, this.x, this.y + this.radius + 4, 50, this.hp, this.maxHp, this.color);
-      ctx.fillStyle = '#fff';
-      ctx.font = '9px Arial';
+      drawHpBar(ctx, cx, cy + r + 6, 60, this.hp, this.maxHp, this.color);
+      ctx.fillStyle = this.color;
+      ctx.font = 'bold 10px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(this.name, this.x, this.y - this.radius - 8);
+      ctx.fillText(this.name, cx, cy - r * 2.5);
+      if (this.phase === 2) {
+        ctx.fillStyle = '#ff2200';
+        ctx.font = 'bold 8px Arial';
+        ctx.fillText('⚡ FAS 2 ⚡', cx, cy - r * 2.5 + 13);
+      }
     } else {
-      // Dormant: just show name faintly
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.font = '9px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(this.name, this.x, this.y - this.radius - 8);
+      ctx.fillText(this.name, cx, cy - r - 10);
     }
   }
 }
